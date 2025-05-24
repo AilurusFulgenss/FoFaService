@@ -1,4 +1,374 @@
-root{
+:root {
+    --brown: #340B01;
+    --header-bg: rgb(72, 20, 6);
+    --card-shadow: rgba(0,0,0,0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    outline: none;
+    border: none;
+    text-decoration: none;
+    transition: .2s linear;
+}
+
+html {
+    font-size: 62.5%;
+    scroll-behavior: smooth;
+    scroll-padding-top: 6rem;
+    overflow-x: hidden;
+}
+
+/* Header */
+.header-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background-color: var(--header-bg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2rem 5rem;
+    z-index: 10;
+}
+
+.logo {
+    margin-top: 1cm;
+    height: 250px;
+    width: 150px;
+    object-fit: contain;
+}
+
+.navbar {
+    display: flex;
+    gap: 2rem;
+}
+
+.navbar a {
+    color: white;
+    font-weight: bold;
+    font-size: 1.2rem;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.navbar a:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+/* Hero Slider */
+.slider {
+    position: relative;
+    width: 100%;
+    height: 80vh;
+    overflow: hidden;
+    margin-top: 100px;
+}
+
+.slider img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+}
+
+.slider img.active {
+    opacity: 1;
+}
+
+.slider-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0,0,0,0.5);
+    color: white;
+    border: none;
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    font-size: 2rem;
+    z-index: 2;
+    transition: background-color 0.3s;
+}
+
+.slider-nav:hover {
+    background-color: rgba(0,0,0,0.7);
+}
+
+.slider-nav.prev { left: 10px; }
+.slider-nav.next { right: 10px; }
+
+.indicators {
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    text-align: center;
+    z-index: 2;
+}
+
+.indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin: 0 5px;
+    background-color: rgba(255,255,255,0.5);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.indicator.active {
+    background-color: white;
+}
+
+/* Section Heading */
+.section-heading {
+    padding: 4rem 5rem 2rem;
+    text-align: center;
+}
+
+.section-heading h2 {
+    font-size: 3rem;
+    color: var(--brown);
+    margin-bottom: 1rem;
+}
+
+.section-heading p {
+    font-size: 1.5rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Cards Section */
+.cards-wrapper {
+    position: relative;
+    padding: 2rem 3rem 4rem;
+}
+
+.cards-container {
+    display: flex;
+    gap: 2rem;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding: 2rem 0;
+    scrollbar-width: none;
+}
+
+.cards-container::-webkit-scrollbar {
+    display: none;
+}
+
+.card {
+    flex: 0 0 300px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px var(--card-shadow);
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.card-content {
+    padding: 1.5rem;
+}
+
+.card h3 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    color: var(--brown);
+}
+
+.card p {
+    font-size: 1.3rem;
+    line-height: 1.6;
+    color: #666;
+}
+
+.scroll-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--header-bg);
+    color: white;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 1rem 1.5rem;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+    z-index: 2;
+}
+
+.scroll-btn:hover {
+    background: #9e4c4c;
+}
+
+.scroll-btn.prev { left: 10px; }
+.scroll-btn.next { right: 10px; }
+
+/* YouTube Section */
+.youtube-section {
+    padding: 4rem 5rem;
+    text-align: center;
+    background-color: #f8f8f8;
+}
+
+.youtube-section h3 {
+    font-size: 2.5rem;
+    margin-bottom: 3rem;
+    color: var(--brown);
+}
+
+.youtube-container iframe {
+    width: 100%;
+    max-width: 800px;
+    height: 450px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px var(--card-shadow);
+}
+
+/* Calendar Section */
+.calendar-section {
+    padding: 4rem 5rem;
+    text-align: center;
+}
+
+.calendar-section h3 {
+    font-size: 2.5rem;
+    margin-bottom: 3rem;
+    color: var(--brown);
+}
+
+.calendar-container iframe {
+    width: 100%;
+    max-width: 1000px;
+    height: 600px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px var(--card-shadow);
+}
+
+/* Footer */
+footer {
+    background-color: #f0f0f0;
+    padding: 3rem 5rem;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+}
+
+.footer-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 4rem;
+    flex-wrap: wrap;
+}
+
+.footer-left {
+    flex: 1;
+    min-width: 300px;
+}
+
+.footer-logo {
+    width: 120px;
+    height: auto;
+    margin-bottom: 2rem;
+}
+
+.footer-socials {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.footer-socials img {
+    width: 35px;
+    height: 35px;
+    transition: transform 0.3s;
+}
+
+.footer-socials img:hover {
+    transform: scale(1.1);
+}
+
+.footer-text {
+    font-size: 1.4rem;
+    color: #333;
+    line-height: 1.6;
+}
+
+.footer-right {
+    flex: 1;
+    max-width: 600px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .header-container {
+        padding: 1rem 2rem;
+        flex-direction: column;
+        height: auto;
+    }
+
+    .logo {
+        margin-top: 0;
+        height: 80px;
+        width: auto;
+    }
+
+    .navbar {
+        margin-top: 1rem;
+    }
+
+    .slider {
+        margin-top: 120px;
+        height: 60vh;
+    }
+
+    .section-heading {
+        padding: 2rem;
+    }
+
+    .cards-wrapper {
+        padding: 2rem 1rem;
+    }
+
+    .youtube-section, .calendar-section {
+        padding: 2rem;
+    }
+
+    .youtube-container iframe,
+    .calendar-container iframe {
+        height: 300px;
+    }
+
+    footer {
+        padding: 2rem;
+    }
+
+    .footer-container {
+        flex-direction: column;
+        gap: 2rem;
+    }
+}
+
+/* root{
   --brown:#340B01;
 }
 
@@ -54,12 +424,12 @@ nav a {
 /****************************************************************/
 
 
-.slider {
+/* .slider {
   position: relative;
   width: 100%;
   height: 800px;
   overflow: hidden;
-  margin-top: 20px; /* ให้ slider ไม่ชน navbar */
+  margin-top: 20px; ให้ slider ไม่ชน navbar 
   z-index: 1;
 } 
 
@@ -77,7 +447,7 @@ nav a {
   z-index: 1;
 }
 
-/* ปุ่ม Prev/Next */
+/* ปุ่ม Prev/Next 
 .slider button {
   position: absolute;
   top: 50%;
@@ -94,7 +464,7 @@ nav a {
 .slider .prev { left: 10px; }
 .slider .next { right: 10px; }
 
-/* จุดกลม indicators */
+/* จุดกลม indicators 
 .indicators {
   position: absolute;
   bottom: 15px;
@@ -118,7 +488,7 @@ nav a {
 }
 
 
-/****************************************************************/
+/****************************************************************
 
 .section-heading {
   padding: 1rem 5rem; 
@@ -130,7 +500,7 @@ nav a {
   font-weight: bold;
 }
 
-/****************************************************************/
+/****************************************************************
 
 
 .card-slider-wrapper {
@@ -148,18 +518,18 @@ nav a {
   overflow-x: auto;
   scroll-behavior: smooth;
   padding: 2rem 0;
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: none; /* Firefox *
 }
 
 .card-grid::-webkit-scrollbar {
-  display: none; /* Chrome */
+  display: none; /* Chrome *
 }
 
 .card {
-  flex: 0 0 25%;  /* ให้แสดง 4 อันในแนวนอน */
+  flex: 0 0 25%;  /* ให้แสดง 4 อันในแนวนอน *
   min-width: 300px;
   max-width: 350px;
-  height: 100%;  /* ให้สูงพอดีกัน */
+  height: 100%;  /* ให้สูงพอดีกัน *
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
   padding: 1rem;
   background: white;
@@ -174,7 +544,7 @@ nav a {
 .card img {
   width: 100%;
   height: 200px;
-  object-fit: cover;  /* ครอบรูปให้เต็มแบบไม่บิดเบี้ยว */
+  object-fit: cover;  /* ครอบรูปให้เต็มแบบไม่บิดเบี้ยว *
   border-radius: 8px;
   margin-bottom: 1rem;
 }
@@ -195,7 +565,7 @@ nav a {
   background: #9e4c4c;
 }
 
-/****************************************************************/
+/****************************************************************
 
 .youtube h3 {
   font-size: 2rem;
@@ -212,11 +582,11 @@ nav a {
   padding-bottom: 4cm;
 }
 
-/****************************************************************/
+/****************************************************************
 
 
 footer {
-  background-color: #f0f0f0; /* พื้นหลังสีเทา */
+  background-color: #f0f0f0; /* พื้นหลังสีเทา *
   padding: 2rem;
   box-shadow: #333 0px 0px 10px;
 }
@@ -262,4 +632,4 @@ footer {
 .footer-right {
   flex: 1;
   max-width: 1000px;
-}
+} */
