@@ -67,7 +67,13 @@ function findBlock(blocks, component) {
 function renderHeader(headerData) {
     const header = getElement("header");
     const navLinks = headerData.navItems
-        .map(item => `<a href="${item.href}">${item.label}</a>`)
+        .map(item => {
+            // แปลง activity video link ให้ชี้ไปหน้าใหม่
+            const href = item.label.toLowerCase().includes('activity video') 
+                ? 'activity-video.html' 
+                : item.href;
+            return `<a href="${href}">${item.label}</a>`;
+        })
         .join("");
 
     header.innerHTML = `
