@@ -7,6 +7,9 @@ const CONFIG = {
     }
 };
 
+// State management
+let projectsData = null;
+
 // Utility functions
 const createElement = (tag, className, innerHTML) => {
     const element = document.createElement(tag);
@@ -17,222 +20,190 @@ const createElement = (tag, className, innerHTML) => {
 
 const getElement = (id) => document.getElementById(id);
 
-// Empty mock data - will use API data instead
-
 // API functions
 async function fetchData() {
     try {
-        // Show loading state
-        showLoadingState();
+        showLoading();
         
-        // Fetch global data (header and footer)
-        const globalRes = await fetch(CONFIG.API_ENDPOINTS.global);
-        if (!globalRes.ok) {
-            throw new Error('Failed to fetch global data');
+        const [globalRes, projectsRes] = await Promise.all([
+            fetch(CONFIG.API_ENDPOINTS.global),
+            fetch(CONFIG.API_ENDPOINTS.projects)
+        ]);
+
+        if (!globalRes.ok || !projectsRes.ok) {
+            throw new Error('Failed to fetch data');
         }
+
         const globalData = await globalRes.json();
+        const projectsDataResponse = await projectsRes.json();
 
-        // Fetch projects data from API
-        const projectsRes = await fetch(CONFIG.API_ENDPOINTS.projects);
-        if (!projectsRes.ok) {
-            throw new Error('Failed to fetch projects data');
-        }
-        const projectsData = await projectsRes.json();
-
-        initializeWebsite(globalData.data, projectsData.data);
-        
+        hideLoading();
+        initializeWebsite(globalData.data, projectsDataResponse.data);
     } catch (error) {
         console.error('Error fetching data:', error);
-        document.body.innerHTML = '<div style="text-align: center; padding: 5rem; font-size: 2rem; color: red;">Failed to load website data. Please check API connection.</div>';
+        hideLoading();
+        showErrorMessage();
     }
 }
 
-function showLoadingState() {
-    const containers = ['projects-quarter-1', 'projects-quarter-2', 'projects-quarter-3', 'projects-quarter-4'];
-    containers.forEach(containerId => {
-        const container = getElement(containerId);
+function showLoading() {
+    const loadingHTML = `
+        <div class="loading">
+            <span>Loading projects...</span>
+        </div>
+    `;
+    
+    for (let i = 1; i <= 4; i++) {
+        const container = getElement(`projects-quarter-${i}`);
         if (container) {
-            container.innerHTML = '<div class="loading">Loading projects...</div>';
+            container.innerHTML = loadingHTML;
         }
-    });
+    }
+}
+
+function hideLoading() {
+    const loadingElements = document.querySelectorAll('.loading');
+    loadingElements.forEach(el => el.remove());
+}
+
+function showErrorMessage() {
+    const errorHTML = `
+        <div style="text-align: center; padding: 3rem; color: #666; font-size: 1.6rem;">
+            <p>ไม่สามารถโหลดข้อมูลโปรเจคได้ กรุณาลองใหม่อีกครั้ง</p>
+        </div>
+    `;
+    
+    for (let i = 1; i <= 4; i++) {
+        const container = getElement(`projects-quarter-${i}`);
+        if (container) {
+            container.innerHTML = errorHTML;
+        }
+    }
 }
 
 // Initialize website
-function initializeWebsite(globalData, projectsData) {
-    if (globalData) {
-        renderHeader(globalData.Header);
-        renderFooter(globalData.Footer);
-    } else {
-        // Fallback header and footer
-        renderFallbackHeader();
-        renderFallbackFooter();
-    }
-    renderProjects(projectsData);
+function initializeWebsite(globalData, projectsDataResponse) {
+    projectsData = projectsDataResponse;
+    
+    renderHeader(globalData.Header);
+    renderProjects(projectsDataResponse.Card);
+    renderFooter(globalData.Footer);
 }
 
 // Render functions
 function renderHeader(headerData) {
     const header = getElement("header");
-    if (!header || !headerData) return;
-
     const navLinks = headerData.navItems
         .map(item => {
-            const isActive = item.label.toLowerCase().includes('project') ? 'active' : '';
-            return `<a href="${item.url}" class="${isActive}">${item.label}</a>`;
+            let href = item.href;
+            let activeClass = '';
+            
+            // Set active class for current page
+            if (item.label.toLowerCase().includes('project & activities')) {
+                activeClass = ' active';
+                href = 'projects.html';
+            }
+            // Handle other navigation links
+            else if (item.label.toLowerCase().includes('activity video')) {
+                href = 'activity-video.html';
+            }
+            else if (item.label.toLowerCase().includes('home')) {
+                href = 'index.html';
+            }
+            
+            return `<a href="${href}" class="${activeClass.trim()}">${item.label}</a>`;
         })
-        .join('');
+        .join("");
 
     header.innerHTML = `
         <div class="header-container">
-            <img src="${CONFIG.STRAPI_URL}${headerData.logo.url}" alt="Logo" class="logo">
-            <nav class="navbar">
-                ${navLinks}
-            </nav>
+            <img src="${CONFIG.STRAPI_URL + headerData.Logo.Logo.url}" alt="Logo" class="logo">
+            <nav class="navbar">${navLinks}</nav>
         </div>
     `;
 }
 
-function renderFallbackHeader() {
-    const header = getElement("header");
-    if (!header) return;
-
-    header.innerHTML = `
-        <div class="header-container">
-            <div class="logo-placeholder" style="width: 150px; height: 80px; background: white; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: var(--brown); font-weight: bold;">FOFA</div>
-            <nav class="navbar">
-                <a href="index.html">Home</a>
-                <a href="projects.html" class="active">Projects & Activities</a>
-                <a href="#about">About</a>
-                <a href="#contact">Contact</a>
-            </nav>
-        </div>
-    `;
-}
-
-function renderProjects(projectsData) {
-    if (!projectsData) {
-        console.error('No projects data available');
+function renderProjects(cardsData) {
+    if (!cardsData || !Array.isArray(cardsData)) {
+        console.error('Invalid projects data');
         return;
     }
 
-    // Handle different possible data structures from API
-    let quarters = [];
-    
-    if (Array.isArray(projectsData)) {
-        // If projectsData is an array, group by quarter
-        quarters = groupProjectsByQuarter(projectsData);
-    } else if (projectsData.quarters) {
-        // If data has quarters structure
-        quarters = projectsData.quarters;
-    } else {
-        // Try to extract quarters from API response
-        quarters = extractQuartersFromAPI(projectsData);
-    }
-
-    quarters.forEach((quarter, index) => {
-        const containerId = `projects-quarter-${index + 1}`;
-        const container = getElement(containerId);
+    cardsData.forEach((quarterData, index) => {
+        const quarterId = index + 1;
+        const container = getElement(`projects-quarter-${quarterId}`);
         
         if (!container) return;
 
-        if (!quarter.projects || quarter.projects.length === 0) {
-            container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #666;">ไม่มีโครงการในไตรมาสนี้</div>';
-            return;
+        // Update quarter title if available
+        const quarterHeader = document.querySelector(`#quarter-${quarterId} .quarter-header h2`);
+        if (quarterHeader && quarterData.Title && quarterData.Title.title) {
+            quarterHeader.textContent = quarterData.Title.title;
         }
 
-        const projectCards = quarter.projects.map(project => createProjectCard(project)).join('');
-        container.innerHTML = projectCards;
-    });
-}
-
-// Helper function to group projects by quarter if they come as a flat array
-function groupProjectsByQuarter(projects) {
-    const quarters = [
-        { id: 1, title: "ไตรมาสที่ 1", projects: [] },
-        { id: 2, title: "ไตรมาสที่ 2", projects: [] },
-        { id: 3, title: "ไตรมาสที่ 3", projects: [] },
-        { id: 4, title: "ไตรมาสที่ 4", projects: [] }
-    ];
-
-    projects.forEach(project => {
-        const quarterIndex = (project.quarter || 1) - 1;
-        if (quarters[quarterIndex]) {
-            quarters[quarterIndex].projects.push(project);
+        // Render project cards
+        if (quarterData.Card && Array.isArray(quarterData.Card)) {
+            container.innerHTML = quarterData.Card.map(project => 
+                createProjectCard(project)
+            ).join("");
+        } else {
+            container.innerHTML = '<p style="text-align: center; color: #666; font-size: 1.6rem; padding: 3rem;">ไม่มีโปรเจคในไตรมาสนี้</p>';
         }
     });
-
-    return quarters;
-}
-
-// Helper function to extract quarters from different API structures
-function extractQuartersFromAPI(data) {
-    // This function should be customized based on your actual API response structure
-    // For now, return empty quarters that will show "no projects" message
-    return [
-        { id: 1, title: "ไตรมาสที่ 1", projects: [] },
-        { id: 2, title: "ไตรมาสที่ 2", projects: [] },
-        { id: 3, title: "ไตรมาสที่ 3", projects: [] },
-        { id: 4, title: "ไตรมาสที่ 4", projects: [] }
-    ];
 }
 
 function createProjectCard(project) {
-    // Handle different possible image structures from API
-    let images = [];
+    const images = project.cardImage || [];
+    const hasMultipleImages = images.length > 1;
     
-    if (project.images && Array.isArray(project.images)) {
-        images = project.images;
-    } else if (project.image) {
-        images = [project.image];
-    } else if (project.media) {
-        images = Array.isArray(project.media) ? project.media : [project.media];
-    }
-    
-    let imageContent = '';
+    let imageSection = '';
     
     if (images.length === 0) {
-        imageContent = `
+        // No images - show placeholder
+        imageSection = `
             <div class="project-images single-image">
-                <div style="width: 100%; height: 100%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #999;">
-                    No Image Available
+                <div style="width: 100%; height: 100%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #999; font-size: 1.4rem;">
+                    ไม่มีรูปภาพ
                 </div>
             </div>
         `;
     } else if (images.length === 1) {
-        const imageUrl = images[0].url || images[0].src || images[0];
-        imageContent = `
+        // Single image
+        imageSection = `
             <div class="project-images single-image">
-                <img src="${CONFIG.STRAPI_URL}${imageUrl}" alt="${project.title || 'Project'}" loading="lazy">
+                <img src="${CONFIG.STRAPI_URL + images[0].url}" alt="${project.Heading}" loading="lazy">
             </div>
         `;
     } else {
+        // Multiple images (show first 4, with "see more" overlay on 4th if more than 4)
         const displayImages = images.slice(0, 4);
-        const hasMore = images.length > 4;
+        const hasMoreImages = images.length > 4;
         
-        imageContent = `
+        imageSection = `
             <div class="project-images multi-image">
-                ${displayImages.slice(0, 3).map(img => {
-                    const imageUrl = img.url || img.src || img;
-                    return `<img src="${CONFIG.STRAPI_URL}${imageUrl}" alt="${project.title || 'Project'}" loading="lazy">`;
-                }).join('')}
-                <div style="position: relative;">
-                    ${(() => {
-                        const img = displayImages[3] || displayImages[0];
-                        const imageUrl = img.url || img.src || img;
-                        return `<img src="${CONFIG.STRAPI_URL}${imageUrl}" alt="${project.title || 'Project'}" loading="lazy">`;
-                    })()}
-                    ${hasMore ? `<div class="see-more-overlay">+${images.length - 3} more</div>` : ''}
-                </div>
+                ${displayImages.map((img, index) => {
+                    if (index === 3 && hasMoreImages) {
+                        return `
+                            <div style="position: relative;">
+                                <img src="${CONFIG.STRAPI_URL + img.url}" alt="${project.Heading}" loading="lazy">
+                                <div class="see-more-overlay">
+                                    +${images.length - 3} more
+                                </div>
+                            </div>
+                        `;
+                    }
+                    return `<img src="${CONFIG.STRAPI_URL + img.url}" alt="${project.Heading}" loading="lazy">`;
+                }).join("")}
             </div>
         `;
     }
 
     return `
-        <div class="project-card" onclick="openProjectModal(${project.id || 0})">
-            ${imageContent}
+        <div class="project-card" onclick="openProjectModal('${project.id}')">
+            ${imageSection}
             <div class="project-content">
-                <h3>${project.title || 'Untitled Project'}</h3>
-                <p>${project.description || 'No description available'}</p>
+                <h3>${project.Heading || 'ไม่มีหัวข้อ'}</h3>
+                <p>${project.text || 'ไม่มีรายละเอียด'}</p>
             </div>
         </div>
     `;
@@ -240,105 +211,137 @@ function createProjectCard(project) {
 
 function renderFooter(footerData) {
     const footer = getElement("footer");
-    if (!footer || !footerData) return;
-
-    const socialLinks = footerData.socialLinks
-        .map(social => `<img src="${CONFIG.STRAPI_URL}${social.icon.url}" alt="${social.platform}">`)
-        .join('');
+    const socialIcons = footerData.Icon.slice(1).map(icon => `
+        <a href="${icon.href}" target="_blank">
+            <img src="${CONFIG.STRAPI_URL + icon.Logo.url}" alt="${icon.label}">
+        </a>
+    `).join("");
 
     footer.innerHTML = `
         <div class="footer-container">
             <div class="footer-left">
-                <img src="${CONFIG.STRAPI_URL}${footerData.logo.url}" alt="Footer Logo" class="footer-logo">
-                <div class="footer-socials">
-                    ${socialLinks}
-                </div>
-                <p class="footer-text">${footerData.description}</p>
+                <img src="${CONFIG.STRAPI_URL + footerData.Icon[0].Logo.url}" alt="Website Logo" class="footer-logo">
+                <div class="footer-socials">${socialIcons}</div>
+                <p class="footer-text">${footerData.text}</p>
             </div>
             <div class="footer-right">
-                <p class="footer-text">${footerData.contactInfo}</p>
+                ${footerData.map?.map || ''}
             </div>
         </div>
     `;
 }
 
-function renderFallbackFooter() {
-    const footer = getElement("footer");
-    if (!footer) return;
-
-    footer.innerHTML = `
-        <div class="footer-container">
-            <div class="footer-left">
-                <div class="footer-logo" style="width: 120px; height: 60px; background: var(--brown); border-radius: 5px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">FOFA</div>
-                <div class="footer-socials">
-                    <div style="width: 35px; height: 35px; background: #ddd; border-radius: 50%;"></div>
-                    <div style="width: 35px; height: 35px; background: #ddd; border-radius: 50%;"></div>
-                    <div style="width: 35px; height: 35px; background: #ddd; border-radius: 50%;"></div>
-                </div>
-                <p class="footer-text">Faculty of Fine Arts - Showcasing creativity and artistic excellence.</p>
-            </div>
-            <div class="footer-right">
-                <p class="footer-text">Contact us for more information about our programs and activities.</p>
-            </div>
-        </div>
-    `;
-}
-
-// Scroll functionality
+// Scrolling functions
 function scrollProjects(quarterId, direction) {
     const container = getElement(`projects-${quarterId}`);
     if (!container) return;
-
-    const scrollAmount = 400; // Width of one card + gap
-    const currentScroll = container.scrollLeft;
-    const newScroll = currentScroll + (direction * scrollAmount);
-
-    container.scrollTo({
-        left: newScroll,
-        behavior: 'smooth'
+    
+    const cardWidth = 400; // Fixed card width from CSS
+    const gap = 30; // Gap between cards
+    const scrollAmount = (cardWidth + gap) * 2; // Scroll 2 cards at a time
+    
+    container.scrollBy({
+        left: direction * scrollAmount,
+        behavior: "smooth"
     });
 }
 
-// Modal functionality (placeholder)
+// Modal functions (for future enhancement)
 function openProjectModal(projectId) {
+    // This function can be enhanced to show a modal with full project details
     console.log('Opening project modal for ID:', projectId);
-    // Implement modal functionality here
-    alert(`Project ID: ${projectId}\nModal functionality can be implemented here.`);
+    
+    // For now, just show an alert
+    // In the future, you can create a modal to display all images and full project details
+    alert('คลิกเพื่อดูรายละเอียดโปรเจค (ฟีเจอร์นี้จะพัฒนาในอนาคต)');
 }
 
-// Smooth scroll behavior for navigation
-function smoothScrollTo(element) {
-    if (element) {
-        element.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-        });
+// Navigation helper functions
+function navigateToHome() {
+    window.location.href = 'index.html';
+}
+
+function navigateToActivities() {
+    window.location.href = 'activity-video.html';
+}
+
+// Error handling for images
+function handleImageError(img) {
+    img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuC5hOC4oeC5iOC4oeC4teC4o+C4ueC4m+C4oDwvdGV4dD48L3N2Zz4=';
+    img.alt = 'ไม่มีรูปภาพ';
+}
+
+// Add global error handler for images
+document.addEventListener('DOMContentLoaded', () => {
+    // Add error handling for dynamically loaded images
+    document.addEventListener('error', (e) => {
+        if (e.target.tagName === 'IMG') {
+            handleImageError(e.target);
+        }
+    }, true);
+    
+    // Initialize the website
+    fetchData();
+});
+
+// Handle page visibility for performance
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        // Pause any animations or intervals when page is hidden
+        console.log('Page hidden - pausing activities');
+    } else {
+        // Resume when page is visible
+        console.log('Page visible - resuming activities');
+    }
+});
+
+// Smooth scrolling for anchor links
+document.addEventListener('click', (e) => {
+    if (e.target.matches('a[href^="#"]')) {
+        e.preventDefault();
+        const targetId = e.target.getAttribute('href').substring(1);
+        const targetElement = document.getElementById(targetId);
+        
+        if (targetElement) {
+            targetElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    }
+});
+
+// Responsive scroll button visibility
+function updateScrollButtons() {
+    for (let i = 1; i <= 4; i++) {
+        const container = getElement(`projects-quarter-${i}`);
+        const wrapper = container?.parentElement;
+        
+        if (container && wrapper) {
+            const prevBtn = wrapper.querySelector('.scroll-btn.prev');
+            const nextBtn = wrapper.querySelector('.scroll-btn.next');
+            
+            if (prevBtn && nextBtn) {
+                // Check if scrolling is needed
+                const needsScrolling = container.scrollWidth > container.clientWidth;
+                
+                if (!needsScrolling) {
+                    prevBtn.style.display = 'none';
+                    nextBtn.style.display = 'none';
+                } else {
+                    prevBtn.style.display = 'block';
+                    nextBtn.style.display = 'block';
+                    
+                    // Update button states based on scroll position
+                    prevBtn.style.opacity = container.scrollLeft > 0 ? '1' : '0.5';
+                    nextBtn.style.opacity = 
+                        container.scrollLeft < (container.scrollWidth - container.clientWidth) ? '1' : '0.5';
+                }
+            }
+        }
     }
 }
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    fetchData();
-    
-    // Add smooth scroll behavior to anchor links
-    document.addEventListener('click', function(e) {
-        if (e.target.tagName === 'A' && e.target.getAttribute('href').startsWith('#')) {
-            e.preventDefault();
-            const targetId = e.target.getAttribute('href').substring(1);
-            const targetElement = getElement(targetId);
-            smoothScrollTo(targetElement);
-        }
-    });
-});
-
-// Handle window resize
-window.addEventListener('resize', function() {
-    // Recalculate scroll positions if needed
-    const containers = document.querySelectorAll('.projects-container');
-    containers.forEach(container => {
-        // Reset scroll position on resize to prevent UI issues
-        if (container.scrollLeft > 0) {
-            container.scrollTo({ left: 0, behavior: 'smooth' });
-        }
-    });
-});
+// Update scroll buttons on scroll and resize
+window.addEventListener('resize', updateScrollButtons);
+document.addEventListener('scroll', updateScrollButtons);

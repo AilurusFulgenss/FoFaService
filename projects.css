@@ -30,7 +30,7 @@ body {
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 1500px;
     margin: 0 auto;
     padding: 0 2rem;
 }
@@ -125,15 +125,19 @@ body {
     padding: 6rem 0;
 }
 
+
 .quarter-section {
-    margin-bottom: 6rem;
-    background: white;
+    width: 100%;
+    max-width: 1500px;         /* ปรับขนาดกว้างสุดตามต้องการ */
+    margin: 0 auto 6rem auto;  /* ชิดกลางและเว้นด้านล่าง */
+    background: rgb(211, 204, 199);
     border-radius: 20px;
-    padding: 3rem;
+    padding: 2rem;
     box-shadow: 0 10px 40px rgba(0,0,0,0.08);
     position: relative;
     overflow: hidden;
 }
+
 
 .quarter-section::before {
     content: '';
@@ -264,7 +268,7 @@ body {
     color: #666;
     line-height: 1.6;
     display: -webkit-box;
-    -webkit-line-clamp: 3; /* Limit to 3 lines */
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
