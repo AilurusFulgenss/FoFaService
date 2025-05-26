@@ -99,15 +99,15 @@ function renderHeader(headerData) {
             let activeClass = '';
             
             // Set active class for current page
-            if (item.label.toLowerCase().includes('project & activities')) {
+            if (item.label.toLowerCase().includes('โครงการและกิจกรรม')) {
                 activeClass = ' active';
                 href = 'projects.html';
             }
             // Handle other navigation links
-            else if (item.label.toLowerCase().includes('activity video')) {
+            else if (item.label.toLowerCase().includes('กิจกรรมบริการวิชาการแก่สังคม')) {
                 href = 'activity-video.html';
             }
-            else if (item.label.toLowerCase().includes('home')) {
+            else if (item.label.toLowerCase().includes('หน้าแรก')) {
                 href = 'index.html';
             }
             

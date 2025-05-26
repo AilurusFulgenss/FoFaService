@@ -71,12 +71,15 @@ function renderHeader(headerData) {
             let href = item.href;
             
             // แปลง activity video link ให้ชี้ไปหน้าใหม่
-            if (item.label.toLowerCase().includes('activity video')) {
+            if (item.label.toLowerCase().includes('กิจกรรมบริการวิชาการแก่สังตม')) {
                 href = 'activity-video.html';
             }
             // แปลง projects link ให้ชี้ไปหน้าใหม่
-            else if (item.label.toLowerCase().includes('project & activities')) {
+            else if (item.label.toLowerCase().includes('โครงการและกิจกรรม')) {
                 href = 'projects.html';
+            }
+            else if (item.label.toLowerCase().includes('หน้าแรก')) {
+                href = 'index.html';
             }
             
             return `<a href="${href}">${item.label}</a>`;

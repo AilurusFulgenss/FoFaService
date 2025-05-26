@@ -100,8 +100,23 @@ function renderHeader(headerData) {
     const header = getElement("header");
     const navLinks = headerData.navItems
         .map(item => {
-            const href = item.label.toLowerCase() === "home" ? "index.html" : item.href;
-            return `<a href="${href}">${item.label}</a>`;
+            let href = item.href;
+            let activeClass = '';
+            
+            // Set active class for current page
+            if (item.label.toLowerCase().includes('โครงการและกิจกรรม')) {
+                activeClass = ' active';
+                href = 'projects.html';
+            }
+            // Handle other navigation links
+            else if (item.label.toLowerCase().includes('กิจกรรมบริการวิชาการแก่สังคม')) {
+                href = 'activity-video.html';
+            }
+            else if (item.label.toLowerCase().includes('หน้าแรก')) {
+                href = 'index.html';
+            }
+            
+            return `<a href="${href}" class="${activeClass.trim()}">${item.label}</a>`;
         })
         .join("");
 
