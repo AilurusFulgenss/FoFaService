@@ -1,10 +1,10 @@
 // Configuration
 const CONFIG = {
-    STRAPI_URL: "http://localhost:1337",
+    STRAPI_URL: "http://10.20.60.48:1337",
     SLIDER_INTERVAL: 4000,
     API_ENDPOINTS: {
-        global: 'http://localhost:1337/api/global',
-        landing: 'http://localhost:1337/api/landing-page'
+        global: 'http://10.20.60.48:1337/api/global',
+        landing: 'http://10.20.60.48:1337/api/landing-page'
     }
 };
 

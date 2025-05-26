@@ -1,9 +1,9 @@
 // Configuration
 const CONFIG = {
-    STRAPI_URL: "http://localhost:1337",
+    STRAPI_URL: "http://10.20.60.48:1337",
     API_ENDPOINTS: {
-        global: 'http://localhost:1337/api/global',
-        activityVideo: 'http://localhost:1337/api/activity-vdo'
+        global: 'http://10.20.60.48:1337/api/global',
+        activityVideo: 'http://10.20.60.48:1337/api/activity-vdo'
     },
     VIDEOS_PER_PAGE: 6
 };
