@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects & Activities - FOFA</title>
+    <link rel="stylesheet" href="projects.css">
+</head>
+<body>
+    <!-- Header -->
+    <header id="header"></header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Page Title -->
+        <section class="page-title">
+            <div class="container">
+                <h1>Projects & Activities</h1>
+                <p>Explore our quarterly projects and activities</p>
+            </div>
+        </section>
+
+        <!-- Projects by Quarter -->
+        <section class="projects-section">
+            <div class="container">
+                <!-- Quarter 1 -->
+                <div class="quarter-section" id="quarter-1">
+                    <div class="quarter-header">
+                        <h2>ไตรมาสที่ 1</h2>
+                    </div>
+                    <div class="projects-wrapper">
+                        <button class="scroll-btn prev" onclick="scrollProjects('quarter-1', -1)">&#10094;</button>
+                        <div class="projects-container" id="projects-quarter-1"></div>
+                        <button class="scroll-btn next" onclick="scrollProjects('quarter-1', 1)">&#10095;</button>
+                    </div>
+                </div>
+
+                <!-- Quarter 2 -->
+                <div class="quarter-section" id="quarter-2">
+                    <div class="quarter-header">
+                        <h2>ไตรมาสที่ 2</h2>
+                    </div>
+                    <div class="projects-wrapper">
+                        <button class="scroll-btn prev" onclick="scrollProjects('quarter-2', -1)">&#10094;</button>
+                        <div class="projects-container" id="projects-quarter-2"></div>
+                        <button class="scroll-btn next" onclick="scrollProjects('quarter-2', 1)">&#10095;</button>
+                    </div>
+                </div>
+
+                <!-- Quarter 3 -->
+                <div class="quarter-section" id="quarter-3">
+                    <div class="quarter-header">
+                        <h2>ไตรมาสที่ 3</h2>
+                    </div>
+                    <div class="projects-wrapper">
+                        <button class="scroll-btn prev" onclick="scrollProjects('quarter-3', -1)">&#10094;</button>
+                        <div class="projects-container" id="projects-quarter-3"></div>
+                        <button class="scroll-btn next" onclick="scrollProjects('quarter-3', 1)">&#10095;</button>
+                    </div>
+                </div>
+
+                <!-- Quarter 4 -->
+                <div class="quarter-section" id="quarter-4">
+                    <div class="quarter-header">
+                        <h2>ไตรมาสที่ 4</h2>
+                    </div>
+                    <div class="projects-wrapper">
+                        <button class="scroll-btn prev" onclick="scrollProjects('quarter-4', -1)">&#10094;</button>
+                        <div class="projects-container" id="projects-quarter-4"></div>
+                        <button class="scroll-btn next" onclick="scrollProjects('quarter-4', 1)">&#10095;</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer id="footer"></footer>
+
+    <script src="projects.js"></script>
+</body>
+</html>

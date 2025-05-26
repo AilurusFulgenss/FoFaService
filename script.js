@@ -68,10 +68,17 @@ function renderHeader(headerData) {
     const header = getElement("header");
     const navLinks = headerData.navItems
         .map(item => {
+            let href = item.href;
+            
             // แปลง activity video link ให้ชี้ไปหน้าใหม่
-            const href = item.label.toLowerCase().includes('activity video') 
-                ? 'activity-video.html' 
-                : item.href;
+            if (item.label.toLowerCase().includes('activity video')) {
+                href = 'activity-video.html';
+            }
+            // แปลง projects link ให้ชี้ไปหน้าใหม่
+            else if (item.label.toLowerCase().includes('project & activities')) {
+                href = 'projects.html';
+            }
+            
             return `<a href="${href}">${item.label}</a>`;
         })
         .join("");
@@ -125,19 +132,27 @@ function renderSectionHeading(headingBlock) {
 
 function renderCards(cardBlock) {
     if (!cardBlock || !cardBlock.Card) return;
-    
+
     const container = getElement("cards-container");
-    
-    container.innerHTML = cardBlock.Card.map(card => `
-        <div class="card">
-            <img src="${CONFIG.STRAPI_URL + card.cardImage.url}" alt="${card.Heading}">
-            <div class="card-content">
-                <h3>${card.Heading}</h3>
-                <p>${card.text}</p>
+
+    container.innerHTML = cardBlock.Card.map(card => {
+        // เลือกรูปแรกจาก array ถ้ามี
+        const imageUrl = card.cardImage?.[0]?.url 
+            ? CONFIG.STRAPI_URL + card.cardImage[0].url 
+            : 'placeholder.jpg'; // หรือใส่ path รูป placeholder ไว้ใช้กรณีไม่มีภาพ
+
+        return `
+            <div class="card">
+                <img src="${imageUrl}" alt="${card.Heading}">
+                <div class="card-content">
+                    <h3>${card.Heading}</h3>
+                    <p>${card.text}</p>
+                </div>
             </div>
-        </div>
-    `).join("");
+        `;
+    }).join("");
 }
+
 
 function renderYouTube(youtubeBlock) {
     if (!youtubeBlock || !youtubeBlock.Clip) return;
