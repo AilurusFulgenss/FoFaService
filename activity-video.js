@@ -161,7 +161,7 @@ function renderVideoCard(video, index) {
         </div>
         <div class="video-info">
             <h3 class="video-title">${video.Heading}</h3>
-            <p class="video-description">Click to watch this exciting activity video</p>
+            <p class="video-description">คลิกเพื่อดูวิดีโอ</p>
         </div>
     `;
 
