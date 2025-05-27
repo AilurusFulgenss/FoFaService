@@ -1,9 +1,9 @@
 // Configuration
 const CONFIG = {
-    STRAPI_URL: "http://10.20.60.48:1337",
+    STRAPI_URL: "http://10.20.60.46:1337",
     API_ENDPOINTS: {
-        global: 'http://10.20.60.48:1337/api/global',
-        projects: 'http://10.20.60.48:1337/api/project-and-activitie'
+        global: 'http://10.20.60.46:1337/api/global',
+        projects: 'http://10.20.60.46:1337/api/project-and-activitie'
     }
 };
 
