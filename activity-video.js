@@ -216,7 +216,7 @@ function loadMoreVideos() {
     
     isLoading = true;
     const loadMoreBtn = getElement('load-more-btn');
-    loadMoreBtn.textContent = 'Loading...';
+    loadMoreBtn.textContent = 'กำลังโหลด...';
     loadMoreBtn.disabled = true;
     
     // Simulate loading delay for better UX
