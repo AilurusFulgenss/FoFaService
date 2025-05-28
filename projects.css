@@ -1,9 +1,9 @@
 /* Import base styles from main CSS */
 :root {
-    --brown: #340B01;
-    --header-bg: rgb(72, 20, 6);
+    --brown: #8A411B;
+    --header-bg: #8A411B;
     --card-shadow: rgba(0,0,0,0.1);
-    --gradient-brown: linear-gradient(135deg, #340B01 0%, #5d1409 100%);
+    --gradient-brown: linear-gradient(135deg, #340B01 0%, #8A411B 100%);
 }
 
 * {

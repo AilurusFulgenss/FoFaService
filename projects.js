@@ -1,9 +1,9 @@
 // Configuration
 const CONFIG = {
-    STRAPI_URL: "http://10.20.60.46:1337",
+    STRAPI_URL: "http://10.20.60.45:1337",
     API_ENDPOINTS: {
-        global: 'http://10.20.60.46:1337/api/global',
-        projects: 'http://10.20.60.46:1337/api/project-and-activitie'
+        global: 'http://10.20.60.45:1337/api/global',
+        projects: 'http://10.20.60.45:1337/api/project-and-activitie'
     }
 };
 
@@ -109,6 +109,9 @@ function renderHeader(headerData) {
             }
             else if (item.label.toLowerCase().includes('หน้าแรก')) {
                 href = 'index.html';
+            }
+            else if (item.label.toLowerCase().includes('งานงบประมาณ')) {
+                href = 'budget.html';
             }
             
             return `<a href="${href}" class="${activeClass.trim()}">${item.label}</a>`;

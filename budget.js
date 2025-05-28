@@ -1,0 +1,427 @@
+// Configuration
+const CONFIG = {
+    STRAPI_URL: "http://10.20.60.45:1337",
+    API_ENDPOINTS: {
+        global: 'http://10.20.60.45:1337/api/global',
+        budget: 'http://10.20.60.45:1337/api/download-page' // API endpoint สำหรับข้อมูลงบประมาณ
+    }
+};
+
+// State management
+let budgetData = [];
+
+// Utility functions
+const createElement = (tag, className, innerHTML) => {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (innerHTML) element.innerHTML = innerHTML;
+    return element;
+};
+
+const getElement = (id) => document.getElementById(id);
+
+const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+const getFileIcon = (fileType) => {
+    const icons = {
+        'pdf': 'fas fa-file-pdf',
+        'doc': 'fas fa-file-word',
+        'docx': 'fas fa-file-word',
+        'xls': 'fas fa-file-excel',
+        'xlsx': 'fas fa-file-excel',
+        'ppt': 'fas fa-file-powerpoint',
+        'pptx': 'fas fa-file-powerpoint',
+        'zip': 'fas fa-file-archive',
+        'rar': 'fas fa-file-archive',
+        'jpg': 'fas fa-file-image',
+        'jpeg': 'fas fa-file-image',
+        'png': 'fas fa-file-image',
+        'gif': 'fas fa-file-image',
+        'txt': 'fas fa-file-alt',
+        'default': 'fas fa-file'
+    };
+    
+    return icons[fileType.toLowerCase()] || icons['default'];
+};
+
+const getFileTypeColor = (fileType) => {
+    const colors = {
+        'pdf': '#dc3545',
+        'doc': '#2b579a',
+        'docx': '#2b579a',
+        'xls': '#217346',
+        'xlsx': '#217346',
+        'ppt': '#d24726',
+        'pptx': '#d24726',
+        'zip': '#6c757d',
+        'rar': '#6c757d',
+        'jpg': '#fd7e14',
+        'jpeg': '#fd7e14',
+        'png': '#fd7e14',
+        'gif': '#fd7e14',
+        'txt': '#6c757d',
+        'default': '#6c757d'
+    };
+    
+    return colors[fileType.toLowerCase()] || colors['default'];
+};
+
+// Helper function to extract file extension and info from URL
+const getFileInfoFromUrl = (url) => {
+    if (!url) return { type: 'pdf', size: 0 };
+    
+    const urlParts = url.split('.');
+    const extension = urlParts[urlParts.length - 1].toLowerCase();
+    
+    // Default sizes based on file type (you can adjust these)
+    const defaultSizes = {
+        'pdf': 1024000,
+        'doc': 512000,
+        'docx': 512000,
+        'xls': 256000,
+        'xlsx': 256000,
+        'jpg': 2048000,
+        'jpeg': 2048000,
+        'png': 1536000,
+        'gif': 1024000
+    };
+    
+    return {
+        type: extension,
+        size: defaultSizes[extension] || 512000
+    };
+};
+
+// API functions
+async function fetchData() {
+    try {
+        const [globalRes, budgetRes] = await Promise.all([
+            fetch(CONFIG.API_ENDPOINTS.global),
+            fetch(CONFIG.API_ENDPOINTS.budget)
+        ]);
+
+        if (!globalRes.ok) {
+            throw new Error('Failed to fetch global data');
+        }
+
+        if (!budgetRes.ok) {
+            throw new Error('Failed to fetch budget data');
+        }
+
+        const globalData = await globalRes.json();
+        const budgetDataResponse = await budgetRes.json();
+        
+        // Transform API data to display format
+        budgetData = transformBudgetData(budgetDataResponse.data);
+        
+        renderHeader(globalData.data.Header);
+        renderBudgetContent();
+        renderFooter(globalData.data.Footer);
+        
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        showError('ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
+    }
+}
+
+// Transform API data to display format
+function transformBudgetData(apiData) {
+    if (!apiData || !apiData.LoadBlocks) {
+        return [];
+    }
+
+    return apiData.LoadBlocks.map((block, blockIndex) => {
+        // สร้าง title จากการดูข้อมูลใน block หรือใช้ title เริ่มต้น
+        let sectionTitle = 'เอกสารและแบบฟอร์ม';
+        
+        // ลองดู pattern จาก card headings เพื่อสร้าง section title
+        if (block.Card && block.Card.length > 0) {
+            const firstCardHeading = block.Card[0].Heading;
+            
+            // จัดกลุ่มตาม pattern ของชื่อ
+            if (firstCardHeading.includes('ค่าบริการทางวิชาการ')) {
+                sectionTitle = 'การให้บริการทางวิชาการ';
+            } else if (firstCardHeading.includes('การจัดประชุม') || firstCardHeading.includes('หลักเกณฑ์ในการจัดประชุม')) {
+                sectionTitle = 'การจัดประชุมและอบรม';
+            } else if (firstCardHeading.includes('ศึกษาดูงาน') || firstCardHeading.includes('ฝึกปฏิบัติ')) {
+                sectionTitle = 'บริการศึกษาดูงานและฝึกปฏิบัติ';
+            } else if (firstCardHeading.includes('ทุนสนับสนุน') || firstCardHeading.includes('วิทยากร')) {
+                sectionTitle = 'ทุนสนับสนุนและวิทยากร';
+            } else if (firstCardHeading.includes('ปาฐกถา') || firstCardHeading.includes('ค่าใช้จ่าย')) {
+                sectionTitle = 'การจัดงานและค่าใช้จ่าย';
+            }
+        }
+        
+        return {
+            id: blockIndex + 1,
+            title: sectionTitle, // ใช้ title ที่สร้างขึ้นแทน "หมวดที่"
+            description: `เอกสารและแบบฟอร์มต่างๆ`,
+            files: block.Card.map((card, cardIndex) => {
+                // ใช้ข้อมูลจริงจาก API แทนการสุ่ม
+                let fileUrl = '/files/default.pdf';
+                let fileInfo = { type: 'pdf', size: 512000 };
+                
+                if (card.cardImage && card.cardImage.length > 0) {
+                    fileUrl = card.cardImage[0].url;
+                    fileInfo = getFileInfoFromUrl(fileUrl);
+                }
+                
+                return {
+                    id: cardIndex + 1,
+                    name: `${card.Heading}.${fileInfo.type}`,
+                    url: fileUrl,
+                    size: fileInfo.size,
+                    type: fileInfo.type,
+                    title: card.Heading
+                };
+            })
+        };
+    });
+}
+
+// Render functions
+function renderHeader(headerData) {
+    const logo = getElement("logo");
+    const navbar = getElement("navbar");
+    
+    logo.src = CONFIG.STRAPI_URL + headerData.Logo.Logo.url;
+    
+    const navLinks = headerData.navItems
+        .map(item => {
+            let href = item.href;
+            
+            // Navigation logic
+            if (item.label.toLowerCase().includes('หน้าแรก')) {
+                href = 'index.html';
+            }
+            else if (item.label.toLowerCase().includes('กิจกรรมบริการวิชาการแก่สังคม')) {
+                href = 'activity-video.html';
+            }
+            else if (item.label.toLowerCase().includes('โครงการและกิจกรรม')) {
+                href = 'projects.html';
+            }
+            else if (item.label.toLowerCase().includes('งานงบประมาณ')) {
+                href = 'budget.html';
+            }
+            
+            // Add active class for current page
+            const activeClass = href === 'budget.html' ? ' active' : '';
+            
+            return `<a href="${href}" class="${activeClass.trim()}">${item.label}</a>`;
+        })
+        .join("");
+
+    navbar.innerHTML = navLinks;
+}
+
+function renderBudgetContent() {
+    const container = getElement("budget-content");
+    
+    if (!budgetData || budgetData.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-folder-open"></i>
+                <h3>ไม่พบข้อมูล</h3>
+                <p>ยังไม่มีไฟล์งบประมาณให้ดาวน์โหลด</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const sectionsHTML = budgetData.map(section => `
+        <div class="budget-section">
+            <div class="section-title">
+                <h2>${section.title}</h2>
+                <p>${section.description}</p>
+            </div>
+            
+            <div class="files-container" id="files-container-${section.id}">
+                <button class="nav-btn prev" onclick="scrollFiles(${section.id}, -1)">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                
+                <div class="files-wrapper" id="files-wrapper-${section.id}">
+                    ${section.files.map(file => `
+                        <div class="file-card" onclick="downloadFile('${file.url}', '${file.name}')">
+                            <div class="file-icon">
+                                <i class="${getFileIcon(file.type)}"></i>
+                            </div>
+                            <div class="file-content">
+                                <h3>${file.title || file.name}</h3>
+                                <div class="file-meta">
+                                    <span class="file-size">${formatFileSize(file.size)}</span>
+                                    <span class="file-type" style="background-color: ${getFileTypeColor(file.type)}">${file.type.toUpperCase()}</span>
+                                </div>
+                                <button class="download-btn">
+                                    <i class="fas fa-download"></i> ดาวน์โหลด
+                                </button>
+                            </div>
+                        </div>
+                    `).join("")}
+                </div>
+                
+                <button class="nav-btn next" onclick="scrollFiles(${section.id}, 1)">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    `).join("");
+    
+    container.innerHTML = sectionsHTML;
+    
+    // Update navigation buttons state for each section
+    budgetData.forEach(section => {
+        updateNavButtons(section.id);
+    });
+}
+
+function renderFooter(footerData) {
+    const footer = getElement("footer");
+    const socialIcons = footerData.Icon.slice(1).map(icon => `
+        <a href="${icon.href}" target="_blank">
+            <img src="${CONFIG.STRAPI_URL + icon.Logo.url}" alt="${icon.label}">
+        </a>
+    `).join("");
+
+    footer.innerHTML = `
+        <div class="footer-container">
+            <div class="footer-left">
+                <img src="${CONFIG.STRAPI_URL + footerData.Icon[0].Logo.url}" alt="Website Logo" class="footer-logo">
+                <div class="footer-socials">${socialIcons}</div>
+                <p class="footer-text">${footerData.text}</p>
+            </div>
+            <div class="footer-right">
+                ${footerData.map?.map || ''}
+            </div>
+        </div>
+    `;
+}
+
+// File operations
+function downloadFile(url, filename) {
+    // สร้าง link element สำหรับดาวน์โหลด
+    const link = document.createElement('a');
+    link.href = CONFIG.STRAPI_URL + url;
+    link.download = filename;
+    link.target = '_blank';
+    
+    // Add click event
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Show download notification
+    showNotification(`กำลังดาวน์โหลด: ${filename}`);
+}
+
+// Scroll functions
+function scrollFiles(sectionId, direction) {
+    const wrapper = getElement(`files-wrapper-${sectionId}`);
+    const cardWidth = wrapper.querySelector('.file-card').offsetWidth + 20; // card width + gap
+    
+    wrapper.scrollBy({
+        left: direction * cardWidth * 2,
+        behavior: 'smooth'
+    });
+    
+    // Update navigation buttons after scroll
+    setTimeout(() => updateNavButtons(sectionId), 300);
+}
+
+function updateNavButtons(sectionId) {
+    const wrapper = getElement(`files-wrapper-${sectionId}`);
+    const container = getElement(`files-container-${sectionId}`);
+    const prevBtn = container.querySelector('.nav-btn.prev');
+    const nextBtn = container.querySelector('.nav-btn.next');
+    
+    if (!wrapper || !prevBtn || !nextBtn) return;
+    
+    const isAtStart = wrapper.scrollLeft <= 0;
+    const isAtEnd = wrapper.scrollLeft >= wrapper.scrollWidth - wrapper.clientWidth - 1;
+    
+    prevBtn.disabled = isAtStart;
+    nextBtn.disabled = isAtEnd;
+}
+
+// Utility functions
+function showError(message) {
+    const container = getElement("budget-content");
+    container.innerHTML = `
+        <div class="empty-state">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>เกิดข้อผิดพลาด</h3>
+            <p>${message}</p>
+            <button onclick="fetchData()" class="download-btn" style="margin-top: 2rem;">
+                ลองใหม่อีกครั้ง
+            </button>
+        </div>
+    `;
+}
+
+function showNotification(message) {
+    // สร้าง notification element
+    const notification = createElement('div', 'notification', `
+        <i class="fas fa-download"></i>
+        <span>${message}</span>
+    `);
+    
+    // Add styles
+    notification.style.cssText = `
+        position: fixed;
+        top: 120px;
+        right: 20px;
+        background: var(--brown);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 25px;
+        z-index: 10000;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        animation: slideIn 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+    
+    .notification {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 1.4rem;
+        font-weight: 600;
+    }
+`;
+document.head.appendChild(style);
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', fetchData);
