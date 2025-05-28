@@ -101,23 +101,23 @@ function renderHeader(headerData) {
     const navLinks = headerData.navItems
         .map(item => {
             let href = item.href;
-            let activeClass = '';
             
-            // Set active class for current page
-            if (item.label.toLowerCase().includes('โครงการและกิจกรรม')) {
-                activeClass = ' active';
-                href = 'projects.html';
+            // Navigation logic
+            if (item.label.toLowerCase().includes('หน้าแรก')) {
+                href = 'index.html';
             }
-            // Handle other navigation links
             else if (item.label.toLowerCase().includes('กิจกรรมบริการวิชาการแก่สังคม')) {
                 href = 'activity-video.html';
             }
-            else if (item.label.toLowerCase().includes('หน้าแรก')) {
-                href = 'index.html';
+            else if (item.label.toLowerCase().includes('โครงการและกิจกรรม')) {
+                href = 'projects.html';
             }
             else if (item.label.toLowerCase().includes('งานงบประมาณ')) {
                 href = 'budget.html';
             }
+            
+            // Add active class for current page
+            const activeClass = href === 'activity-video.html' ? ' active' : '';
             
             return `<a href="${href}" class="${activeClass.trim()}">${item.label}</a>`;
         })

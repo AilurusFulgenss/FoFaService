@@ -70,22 +70,24 @@ function renderHeader(headerData) {
         .map(item => {
             let href = item.href;
             
-            // แปลง activity video link ให้ชี้ไปหน้าใหม่
-            if (item.label.toLowerCase().includes('กิจกรรมบริการวิชาการแก่สังคม')) {
+            // Navigation logic
+            if (item.label.toLowerCase().includes('หน้าแรก')) {
+                href = 'index.html';
+            }
+            else if (item.label.toLowerCase().includes('กิจกรรมบริการวิชาการแก่สังคม')) {
                 href = 'activity-video.html';
             }
-            // แปลง projects link ให้ชี้ไปหน้าใหม่
             else if (item.label.toLowerCase().includes('โครงการและกิจกรรม')) {
                 href = 'projects.html';
-            }
-            else if (item.label.toLowerCase().includes('หน้าแรก')) {
-                href = 'index.html';
             }
             else if (item.label.toLowerCase().includes('งานงบประมาณ')) {
                 href = 'budget.html';
             }
             
-            return `<a href="${href}">${item.label}</a>`;
+            // Add active class for current page
+            const activeClass = href === 'index.html' ? ' active' : '';
+            
+            return `<a href="${href}" class="${activeClass.trim()}">${item.label}</a>`;
         })
         .join("");
 

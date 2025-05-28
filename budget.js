@@ -74,30 +74,40 @@ const getFileTypeColor = (fileType) => {
     return colors[fileType.toLowerCase()] || colors['default'];
 };
 
-// Helper function to extract file extension and info from URL
-const getFileInfoFromUrl = (url) => {
-    if (!url) return { type: 'pdf', size: 0 };
+// Helper function to get actual file size from API or extract file extension
+const getFileInfoFromUrl = async (fileData) => {
+    if (!fileData) return { type: 'pdf', size: 0 };
     
-    const urlParts = url.split('.');
-    const extension = urlParts[urlParts.length - 1].toLowerCase();
+    // ถ้ามี size ใน API data ให้ใช้ค่าจริง
+    if (fileData.size) {
+        const urlParts = fileData.url.split('.');
+        const extension = urlParts[urlParts.length - 1].toLowerCase();
+        return {
+            type: extension,
+            size: fileData.size
+        };
+    }
     
-    // Default sizes based on file type (you can adjust these)
-    const defaultSizes = {
-        'pdf': 1024000,
-        'doc': 512000,
-        'docx': 512000,
-        'xls': 256000,
-        'xlsx': 256000,
-        'jpg': 2048000,
-        'jpeg': 2048000,
-        'png': 1536000,
-        'gif': 1024000
-    };
-    
-    return {
-        type: extension,
-        size: defaultSizes[extension] || 512000
-    };
+    // ถ้าไม่มี size ให้ลองดึงจาก HEAD request
+    try {
+        const response = await fetch(CONFIG.STRAPI_URL + fileData.url, { method: 'HEAD' });
+        const contentLength = response.headers.get('content-length');
+        const urlParts = fileData.url.split('.');
+        const extension = urlParts[urlParts.length - 1].toLowerCase();
+        
+        return {
+            type: extension,
+            size: contentLength ? parseInt(contentLength) : 0
+        };
+    } catch (error) {
+        // ถ้าดึงไม่ได้ให้ใช้ค่า 0
+        const urlParts = fileData.url.split('.');
+        const extension = urlParts[urlParts.length - 1].toLowerCase();
+        return {
+            type: extension,
+            size: 0
+        };
+    }
 };
 
 // API functions
@@ -120,7 +130,7 @@ async function fetchData() {
         const budgetDataResponse = await budgetRes.json();
         
         // Transform API data to display format
-        budgetData = transformBudgetData(budgetDataResponse.data);
+        budgetData = await transformBudgetData(budgetDataResponse.data);
         
         renderHeader(globalData.data.Header);
         renderBudgetContent();
@@ -133,12 +143,14 @@ async function fetchData() {
 }
 
 // Transform API data to display format
-function transformBudgetData(apiData) {
+async function transformBudgetData(apiData) {
     if (!apiData || !apiData.LoadBlocks) {
         return [];
     }
 
-    return apiData.LoadBlocks.map((block, blockIndex) => {
+    const transformedData = [];
+    
+    for (const [blockIndex, block] of apiData.LoadBlocks.entries()) {
         // สร้าง title จากการดูข้อมูลใน block หรือใช้ title เริ่มต้น
         let sectionTitle = 'เอกสารและแบบฟอร์ม';
         
@@ -154,37 +166,44 @@ function transformBudgetData(apiData) {
             } else if (firstCardHeading.includes('ศึกษาดูงาน') || firstCardHeading.includes('ฝึกปฏิบัติ')) {
                 sectionTitle = 'บริการศึกษาดูงานและฝึกปฏิบัติ';
             } else if (firstCardHeading.includes('ทุนสนับสนุน') || firstCardHeading.includes('วิทยากร')) {
-                sectionTitle = 'ทุนสนับสนุนและวิทยากร';
+                sectionTitle = 'ทุนสนับสนุนและวิทยากr';
             } else if (firstCardHeading.includes('ปาฐกถา') || firstCardHeading.includes('ค่าใช้จ่าย')) {
                 sectionTitle = 'การจัดงานและค่าใช้จ่าย';
             }
         }
         
-        return {
+        const files = [];
+        
+        // ประมวลผลไฟล์แต่ละไฟล์
+        for (const [cardIndex, card] of block.Card.entries()) {
+            let fileUrl = '/files/default.pdf';
+            let fileInfo = { type: 'pdf', size: 0 };
+            
+            if (card.cardImage && card.cardImage.length > 0) {
+                fileUrl = card.cardImage[0].url;
+                // ใช้ฟังก์ชันใหม่เพื่อดึงขนาดไฟล์จริง
+                fileInfo = await getFileInfoFromUrl(card.cardImage[0]);
+            }
+            
+            files.push({
+                id: cardIndex + 1,
+                name: `${card.Heading}.${fileInfo.type}`,
+                url: fileUrl,
+                size: fileInfo.size,
+                type: fileInfo.type,
+                title: card.Heading
+            });
+        }
+        
+        transformedData.push({
             id: blockIndex + 1,
-            title: sectionTitle, // ใช้ title ที่สร้างขึ้นแทน "หมวดที่"
+            title: sectionTitle,
             description: `เอกสารและแบบฟอร์มต่างๆ`,
-            files: block.Card.map((card, cardIndex) => {
-                // ใช้ข้อมูลจริงจาก API แทนการสุ่ม
-                let fileUrl = '/files/default.pdf';
-                let fileInfo = { type: 'pdf', size: 512000 };
-                
-                if (card.cardImage && card.cardImage.length > 0) {
-                    fileUrl = card.cardImage[0].url;
-                    fileInfo = getFileInfoFromUrl(fileUrl);
-                }
-                
-                return {
-                    id: cardIndex + 1,
-                    name: `${card.Heading}.${fileInfo.type}`,
-                    url: fileUrl,
-                    size: fileInfo.size,
-                    type: fileInfo.type,
-                    title: card.Heading
-                };
-            })
-        };
-    });
+            files: files
+        });
+    }
+    
+    return transformedData;
 }
 
 // Render functions
@@ -257,7 +276,7 @@ function renderBudgetContent() {
                             <div class="file-content">
                                 <h3>${file.title || file.name}</h3>
                                 <div class="file-meta">
-                                    <span class="file-size">${formatFileSize(file.size)}</span>
+                                    <span class="file-size">${file.size > 0 ? formatFileSize(file.size) : 'ไม่ระบุขนาด'}</span>
                                     <span class="file-type" style="background-color: ${getFileTypeColor(file.type)}">${file.type.toUpperCase()}</span>
                                 </div>
                                 <button class="download-btn">
