@@ -47,9 +47,8 @@ body {
 }
 
 .logo {
-    margin-top: 1cm;
-    height: 250px;
-    width: 150px;
+    height: 80px;
+    width: auto;
     object-fit: contain;
     transition: transform 0.3s;
 }
