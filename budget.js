@@ -166,7 +166,7 @@ async function transformBudgetData(apiData) {
             } else if (firstCardHeading.includes('ศึกษาดูงาน') || firstCardHeading.includes('ฝึกปฏิบัติ')) {
                 sectionTitle = 'บริการศึกษาดูงานและฝึกปฏิบัติ';
             } else if (firstCardHeading.includes('ทุนสนับสนุน') || firstCardHeading.includes('วิทยากร')) {
-                sectionTitle = 'ทุนสนับสนุนและวิทยากr';
+                sectionTitle = 'ทุนสนับสนุนและวิทยากร';
             } else if (firstCardHeading.includes('ปาฐกถา') || firstCardHeading.includes('ค่าใช้จ่าย')) {
                 sectionTitle = 'การจัดงานและค่าใช้จ่าย';
             }
@@ -198,7 +198,7 @@ async function transformBudgetData(apiData) {
         transformedData.push({
             id: blockIndex + 1,
             title: sectionTitle,
-            description: `เอกสารและแบบฟอร์มต่างๆ`,
+            description: `เอกสารและแบบฟอร์ม`,
             files: files
         });
     }
