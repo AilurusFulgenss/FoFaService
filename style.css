@@ -2,6 +2,7 @@
     --brown: #8A411B;
     --header-bg: rgb(138, 65, 27);
     --card-shadow: rgba(0,0,0,0.1);
+    --gradient-bg: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
 * {
