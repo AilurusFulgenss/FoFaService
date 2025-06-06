@@ -61,7 +61,7 @@ async function fetchData() {
 
 function showLoading() {
     const videoGrid = getElement('video-grid');
-    videoGrid.innerHTML = '<div class="loading">Loading videos...</div>';
+    videoGrid.innerHTML = '<div class="loading">กำลังโหลด...</div>';
 }
 
 function hideLoading() {

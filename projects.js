@@ -49,7 +49,7 @@
     function showLoading() {
         const loadingHTML = `
             <div class="loading">
-                <span>Loading projects...</span>
+                <span>กำลังโหลด...</span>
             </div>
         `;
         
