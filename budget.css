@@ -47,11 +47,17 @@ body {
     box-shadow: 0 2px 20px rgba(0,0,0,0.1);
 }
 
-.logo {
+/* .logo {
     height: 80px;
     width: auto;
     object-fit: contain;
     transition: transform 0.3s;
+} */
+.logo {
+    margin-top: 1cm;
+    height: 250px;
+    width: 150px;
+    object-fit: contain;
 }
 
 .logo:hover {
