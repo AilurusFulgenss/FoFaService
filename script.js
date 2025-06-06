@@ -1,10 +1,10 @@
 // Configuration
 const CONFIG = {
-    STRAPI_URL: "http://10.20.60.45:1337",
+    STRAPI_URL: "https://fofafest.onrender.com",
     SLIDER_INTERVAL: 4000,
     API_ENDPOINTS: {
-        global: 'http://10.20.60.45:1337/api/global',
-        landing: 'http://10.20.60.45:1337/api/landing-page'
+        global: 'https://fofafest.onrender.com/api/global',
+        landing: 'https://fofafest.onrender.com/api/landing-page'
     }
 };
 

@@ -1,9 +1,9 @@
 // Configuration
 const CONFIG = {
-    STRAPI_URL: "http://10.20.60.45:1337",
+    STRAPI_URL: "https://fofafest.onrender.com",
     API_ENDPOINTS: {
-        global: 'http://10.20.60.45:1337/api/global',
-        budget: 'http://10.20.60.45:1337/api/download-page' // API endpoint สำหรับข้อมูลงบประมาณ
+        global: 'https://fofafest.onrender.com/api/global',
+        budget: 'https://fofafest.onrender.com/api/download-page' // API endpoint สำหรับข้อมูลงบประมาณ
     }
 };
 
