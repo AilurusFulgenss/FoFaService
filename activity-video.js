@@ -1,9 +1,9 @@
 // Configuration
 const CONFIG = {
-    STRAPI_URL: "http://10.20.60.45:1337",
+    STRAPI_URL: "https://fofafest.onrender.com",
     API_ENDPOINTS: {
-        global: 'http://10.20.60.45:1337/api/global',
-        activityVideo: 'http://10.20.60.45:1337/api/activity-vdo'
+        global: 'https://fofafest.onrender.com/api/global',
+        activityVideo: 'https://fofafest.onrender.com/api/activity-vdo'
     },
     VIDEOS_PER_PAGE: 6
 };
