@@ -1,9 +1,9 @@
 // Configuration
 const CONFIG = {
-    STRAPI_URL: "https://fofafest.onrender.com",
+    STRAPI_URL: "https://healing-deer-4066e16ac3.strapiapp.com",
     API_ENDPOINTS: {
-        global: 'https://fofafest.onrender.com/api/global',
-        activityVideo: 'https://fofafest.onrender.com/api/activity-vdo'
+        global: 'https://healing-deer-4066e16ac3.strapiapp.com/api/global',
+        activityVideo: 'https://healing-deer-4066e16ac3.strapiapp.com/api/activity-vdo'
     },
     VIDEOS_PER_PAGE: 6
 };
@@ -125,7 +125,7 @@ function renderHeader(headerData) {
 
     header.innerHTML = `
         <div class="header-container">
-            <img src="${CONFIG.STRAPI_URL + headerData.Logo.Logo.url}" alt="Logo" class="logo">
+            <img src="${headerData.Logo.Logo.url}" alt="Logo" class="logo">
             <nav class="navbar">${navLinks}</nav>
         </div>
     `;
@@ -135,14 +135,14 @@ function renderFooter(footerData) {
     const footer = getElement("footer");
     const socialIcons = footerData.Icon.slice(1).map(icon => `
         <a href="${icon.href}" target="_blank">
-            <img src="${CONFIG.STRAPI_URL + icon.Logo.url}" alt="${icon.label}">
+            <img src="${icon.Logo.url}" alt="${icon.label}">
         </a>
     `).join("");
 
     footer.innerHTML = `
         <div class="footer-container">
             <div class="footer-left">
-                <img src="${CONFIG.STRAPI_URL + footerData.Icon[0].Logo.url}" alt="Website Logo" class="footer-logo">
+                <img src="${footerData.Icon[0].Logo.url}" alt="Website Logo" class="footer-logo">
                 <div class="footer-socials">${socialIcons}</div>
                 <p class="footer-text">${footerData.text}</p>
             </div>

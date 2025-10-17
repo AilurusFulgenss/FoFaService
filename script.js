@@ -1,10 +1,10 @@
 // Configuration
 const CONFIG = {
-    STRAPI_URL: "https://fofafest.onrender.com",
+    STRAPI_URL: "https://healing-deer-4066e16ac3.strapiapp.com",
     SLIDER_INTERVAL: 4000,
     API_ENDPOINTS: {
-        global: 'https://fofafest.onrender.com/api/global',
-        landing: 'https://fofafest.onrender.com/api/landing-page'
+        global: 'https://healing-deer-4066e16ac3.strapiapp.com/api/global',
+        landing: 'https://healing-deer-4066e16ac3.strapiapp.com/api/landing-page'
     }
 };
 
@@ -93,7 +93,7 @@ function renderHeader(headerData) {
 
     header.innerHTML = `
         <div class="header-container">
-            <img src="${CONFIG.STRAPI_URL + headerData.Logo.Logo.url}" alt="Logo" class="logo">
+            <img src="${headerData.Logo.Logo.url}" alt="Logo" class="logo">
             <nav class="navbar">${navLinks}</nav>
         </div>
     `;
@@ -108,7 +108,7 @@ function renderHero(heroBlock) {
     // Add images
     images.forEach((img, index) => {
         const imgElement = createElement('img');
-        imgElement.src = CONFIG.STRAPI_URL + img.Image.url;
+        imgElement.src = img.Image.url;
         imgElement.alt = `Hero image ${index + 1}`;
         if (index === 0) imgElement.classList.add('active');
         container.appendChild(imgElement);
@@ -146,7 +146,7 @@ function renderCards(cardBlock) {
     container.innerHTML = cardBlock.Card.map(card => {
         // เลือกรูปแรกจาก array ถ้ามี
         const imageUrl = card.cardImage?.[0]?.url 
-            ? CONFIG.STRAPI_URL + card.cardImage[0].url 
+            ? card.cardImage[0].url 
             : 'placeholder.jpg'; // หรือใส่ path รูป placeholder ไว้ใช้กรณีไม่มีภาพ
 
         return `
@@ -192,14 +192,14 @@ function renderFooter(footerData) {
     const footer = getElement("footer");
     const socialIcons = footerData.Icon.slice(1).map(icon => `
         <a href="${icon.href}" target="_blank">
-            <img src="${CONFIG.STRAPI_URL + icon.Logo.url}" alt="${icon.label}">
+            <img src="${icon.Logo.url}" alt="${icon.label}">
         </a>
     `).join("");
 
     footer.innerHTML = `
         <div class="footer-container">
             <div class="footer-left">
-                <img src="${CONFIG.STRAPI_URL + footerData.Icon[0].Logo.url}" alt="Website Logo" class="footer-logo">
+                <img src="${footerData.Icon[0].Logo.url}" alt="Website Logo" class="footer-logo">
                 <div class="footer-socials">${socialIcons}</div>
                 <p class="footer-text">${footerData.text}</p>
             </div>

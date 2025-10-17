@@ -1,9 +1,9 @@
 // Configuration
 const CONFIG = {
-    STRAPI_URL: "https://fofafest.onrender.com",
+    STRAPI_URL: "https://healing-deer-4066e16ac3.strapiapp.com",
     API_ENDPOINTS: {
-        global: 'https://fofafest.onrender.com/api/global',
-        budget: 'https://fofafest.onrender.com/api/download-page' // API endpoint สำหรับข้อมูลงบประมาณ
+        global: 'https://healing-deer-4066e16ac3.strapiapp.com/api/global',
+        budget: 'https://healing-deer-4066e16ac3.strapiapp.com/api/download-page' // API endpoint สำหรับข้อมูลงบประมาณ
     }
 };
 
@@ -90,7 +90,7 @@ const getFileInfoFromUrl = async (fileData) => {
     
     // ถ้าไม่มี size ให้ลองดึงจาก HEAD request
     try {
-        const response = await fetch(CONFIG.STRAPI_URL + fileData.url, { method: 'HEAD' });
+        const response = await fetch(fileData.url, { method: 'HEAD' });
         const contentLength = response.headers.get('content-length');
         const urlParts = fileData.url.split('.');
         const extension = urlParts[urlParts.length - 1].toLowerCase();
@@ -211,7 +211,7 @@ function renderHeader(headerData) {
     const logo = getElement("logo");
     const navbar = getElement("navbar");
     
-    logo.src = CONFIG.STRAPI_URL + headerData.Logo.Logo.url;
+    logo.src = headerData.Logo.Logo.url;
     
     const navLinks = headerData.navItems
         .map(item => {
@@ -306,14 +306,14 @@ function renderFooter(footerData) {
     const footer = getElement("footer");
     const socialIcons = footerData.Icon.slice(1).map(icon => `
         <a href="${icon.href}" target="_blank">
-            <img src="${CONFIG.STRAPI_URL + icon.Logo.url}" alt="${icon.label}">
+            <img src="${icon.Logo.url}" alt="${icon.label}">
         </a>
     `).join("");
 
     footer.innerHTML = `
         <div class="footer-container">
             <div class="footer-left">
-                <img src="${CONFIG.STRAPI_URL + footerData.Icon[0].Logo.url}" alt="Website Logo" class="footer-logo">
+                <img src="${footerData.Icon[0].Logo.url}" alt="Website Logo" class="footer-logo">
                 <div class="footer-socials">${socialIcons}</div>
                 <p class="footer-text">${footerData.text}</p>
             </div>
@@ -328,7 +328,7 @@ function renderFooter(footerData) {
 function downloadFile(url, filename) {
     // สร้าง link element สำหรับดาวน์โหลด
     const link = document.createElement('a');
-    link.href = CONFIG.STRAPI_URL + url;
+    link.href = url;
     link.download = filename;
     link.target = '_blank';
     

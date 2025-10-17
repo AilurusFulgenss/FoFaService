@@ -1,9 +1,9 @@
     // Configuration
     const CONFIG = {
-        STRAPI_URL: "https://fofafest.onrender.com",
+        STRAPI_URL: "https://healing-deer-4066e16ac3.strapiapp.com",
         API_ENDPOINTS: {
-            global: 'https://fofafest.onrender.com/api/global',
-            projects: 'https://fofafest.onrender.com/api/project-and-activitie'
+            global: 'https://healing-deer-4066e16ac3.strapiapp.com/api/global',
+            projects: 'https://healing-deer-4066e16ac3.strapiapp.com/api/project-and-activitie'
         }
     };
 
@@ -120,7 +120,7 @@
 
         header.innerHTML = `
             <div class="header-container">
-                <img src="${CONFIG.STRAPI_URL + headerData.Logo.Logo.url}" alt="Logo" class="logo">
+                <img src="${headerData.Logo.Logo.url}" alt="Logo" class="logo">
                 <nav class="navbar">${navLinks}</nav>
             </div>
         `;
@@ -174,7 +174,7 @@
             // Single image
             imageSection = `
                 <div class="project-images single-image">
-                    <img src="${CONFIG.STRAPI_URL + images[0].url}" alt="${project.Heading}" loading="lazy">
+                    <img src="${images[0].url}" alt="${project.Heading}" loading="lazy">
                 </div>
             `;
         } else {
@@ -188,14 +188,14 @@
                         if (index === 3 && hasMoreImages) {
                             return `
                                 <div style="position: relative;">
-                                    <img src="${CONFIG.STRAPI_URL + img.url}" alt="${project.Heading}" loading="lazy">
+                                    <img src="${img.url}" alt="${project.Heading}" loading="lazy">
                                     <div class="see-more-overlay">
                                         +${images.length - 3} more
                                     </div>
                                 </div>
                             `;
                         }
-                        return `<img src="${CONFIG.STRAPI_URL + img.url}" alt="${project.Heading}" loading="lazy">`;
+                        return `<img src="${img.url}" alt="${project.Heading}" loading="lazy">`;
                     }).join("")}
                 </div>
             `;
@@ -216,14 +216,14 @@
         const footer = getElement("footer");
         const socialIcons = footerData.Icon.slice(1).map(icon => `
             <a href="${icon.href}" target="_blank">
-                <img src="${CONFIG.STRAPI_URL + icon.Logo.url}" alt="${icon.label}">
+                <img src="${icon.Logo.url}" alt="${icon.label}">
             </a>
         `).join("");
 
         footer.innerHTML = `
             <div class="footer-container">
                 <div class="footer-left">
-                    <img src="${CONFIG.STRAPI_URL + footerData.Icon[0].Logo.url}" alt="Website Logo" class="footer-logo">
+                    <img src="${footerData.Icon[0].Logo.url}" alt="Website Logo" class="footer-logo">
                     <div class="footer-socials">${socialIcons}</div>
                     <p class="footer-text">${footerData.text}</p>
                 </div>
