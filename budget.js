@@ -111,33 +111,38 @@ const getFileInfoFromUrl = async (fileData) => {
 };
 
 // API functions
-async function fetchData() {
+// 1. ฟังก์ชันสำหรับโหลด Layout (Header/Footer) โดยเฉพาะ
+async function loadLayout() {
     try {
-        const [globalRes, budgetRes] = await Promise.all([
-            fetch(CONFIG.API_ENDPOINTS.global),
-            fetch(CONFIG.API_ENDPOINTS.budget)
-        ]);
-
-        if (!globalRes.ok) {
-            throw new Error('Failed to fetch global data');
-        }
-
-        if (!budgetRes.ok) {
-            throw new Error('Failed to fetch budget data');
-        }
-
+        const globalRes = await fetch(CONFIG.API_ENDPOINTS.global);
+        if (!globalRes.ok) throw new Error('Failed to fetch global data');
+        
         const globalData = await globalRes.json();
-        const budgetDataResponse = await budgetRes.json();
         
-        // Transform API data to display format
-        budgetData = await transformBudgetData(budgetDataResponse.data);
-        
+        // เรนเดอร์ Header และ Footer ทันที!
         renderHeader(globalData.data.Header);
-        renderBudgetContent();
         renderFooter(globalData.data.Footer);
         
     } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error loading layout:', error);
+        // ถ้า Header/Footer ล่ม ก็อาจจะแสดงผล error บางอย่าง
+    }
+}
+
+// 2. ฟังก์ชันสำหรับโหลดเนื้อหาหน้างบประมาณ
+async function loadBudgetContent() {
+    try {
+        const budgetRes = await fetch(CONFIG.API_ENDPOINTS.budget);
+        if (!budgetRes.ok) throw new Error('Failed to fetch budget data');
+        
+        const budgetDataResponse = await budgetRes.json();
+        
+        // แปลงข้อมูลและเรนเดอร์เนื้อหา (ซึ่งจะใช้เวลา ก็ไม่เป็นไร)
+        budgetData = await transformBudgetData(budgetDataResponse.data);
+        renderBudgetContent();
+        
+    } catch (error) {
+        console.error('Error fetching budget data:', error);
         showError('ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
     }
 }
@@ -443,4 +448,8 @@ style.textContent = `
 document.head.appendChild(style);
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', fetchData);
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    loadLayout();         // <-- 1. สั่งโหลด Layout ทันที
+    loadBudgetContent();  // <-- 2. สั่งโหลดเนื้อหา (มันจะโหลดขนานกันไป แต่ไม่บล็อก Layout)
+});
