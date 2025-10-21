@@ -248,17 +248,12 @@
             behavior: "smooth"
         });
     }
-
-    // Modal functions (for future enhancement)
+    // เปิดหน้า activity-detail.html
     function openProjectModal(projectId) {
-        // This function can be enhanced to show a modal with full project details
-        console.log('Opening project modal for ID:', projectId);
-        
-        // For now, just show an alert
-        // In the future, you can create a modal to display all images and full project details
-        alert('คลิกเพื่อดูรายละเอียดโปรเจค (ฟีเจอร์นี้จะพัฒนาในอนาคต)');
+        // สั่งให้เบราว์เซอร์เปิดหน้าใหม่
+        // โดยส่ง projectId ไปใน URL parameter ที่ชื่อ 'id'
+        window.location.href = `activity-detail.html?id=${projectId}`;
     }
-
     // Navigation helper functions
     function navigateToHome() {
         window.location.href = 'index.html';
