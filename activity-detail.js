@@ -1,73 +1,99 @@
-// MOCK DATA VERSION
-const FAKE_PROJECT_DATA = {
-    id: 1,
-    attributes: {
-        Title: "โครงการบริการวิชาการแก่สังคม (เวอร์ชันจำลอง)",
-        Description: "<p>เมเปิลโอเปร่าซิมโฟนีอาร์พีจีออทิสติก แบ็กโฮเก๊ะนางแบบ อิกัวนาทับซ้อนฮิตฟาสต์ฟู้ด ยากูซ่าทรูมั้ง วอลซ์ตัวตนวิกรีไซเคิล วีไอพีปาร์ตี้บร็อกโคลี ออโต้ม้านั่งเรซิ่น ตอกย้ำสหัสวรรษโกะสแตนดาร์ดแรลลี่ เอ๊าะแผดเผาอุตสาหการ ฮ็อตด็อกทอม ดีมานด์ฮาร์ดวอลนัตเยอบีราแอคทีฟ แพนดาสุนทรีย์เอาท์ สงบสุขโมเดิร์นทับซ้อน วีเจแคนยอนเอาท์ หน่อมแน้ม ผลักดันฮ็อตรีโมท</p>",
-        cardImage: {
-            data: [
-                // รูปที่ 1 (รูปใหญ่ 2x2)
-                { id: 101, attributes: { url: 'https://via.placeholder.com/800x800.png?text=Image+1', formats: { small: { url: 'https://via.placeholder.com/400x400.png?text=Image+1' } }, alternativeText: 'Test 1' } },
-                // รูปที่ 2
-                { id: 102, attributes: { url: 'https://via.placeholder.com/800x600.png?text=Image+2', formats: { small: { url: 'https://via.placeholder.com/400x300.png?text=Image+2' } }, alternativeText: 'Test 2' } },
-                // รูปที่ 3
-                { id: 103, attributes: { url: 'https://via.placeholder.com/600x800.png?text=Image+3', formats: { small: { url: 'https://via.placeholder.com/300x400.png?text=Image+3' } }, alternativeText: 'Test 3' } },
-                // รูปที่ 4
-                { id: 104, attributes: { url: 'https://via.placeholder.com/800x800.png?text=Image+4', formats: { small: { url: 'https://via.placeholder.com/400x400.png?text=Image+4' } }, alternativeText: 'Test 4' } },
-                // รูปที่ 5 (รูปสุดท้ายที่จะโชว์ + ปุ่ม More)
-                { id: 105, attributes: { url: 'https://via.placeholder.com/600x600.png?text=Image+5', formats: { small: { url: 'https://via.placeholder.com/300x300.png?text=Image+5' } }, alternativeText: 'Test 5' } },
-                // --- รูปที่ซ่อนไว้ (สำหรับ Fancybox) ---
-                // รูปที่ 6
-                { id: 106, attributes: { url: 'https://via.placeholder.com/1920x1080.png?text=Image+6+(Hidden)', formats: { small: { url: 'https://via.placeholder.com/1920x1080.png?text=Image+6' } }, alternativeText: 'Test 6' } },
-                // รูปที่ 7
-                { id: 107, attributes: { url: 'https://via.placeholder.com/1080x1920.png?text=Image+7+(Hidden)', formats: { small: { url: 'https://via.placeholder.com/1080x1920.png?text=Image+7' } }, alternativeText: 'Test 7' } }
-            ]
-        }
-    }
-};
-//END MOCK DATA
-
-
 // CONFIG 
 const CONFIG = {
     STRAPI_URL: "https://healing-deer-4066e16ac3.strapiapp.com",
     API_ENDPOINTS: {
         global: 'https://healing-deer-4066e16ac3.strapiapp.com/api/global',
+        // ใช้ API เดิมที่ Projects.js ใช้ เพื่อดึงข้อมูลโครงการทั้งหมด
+        projects: 'https://healing-deer-4066e16ac3.strapiapp.com/api/project-and-activitie',
+        // --- NEW: API สำหรับดึงยอดรวมวิว ---
+        globalView: 'https://healing-deer-4066e16ac3.strapiapp.com/api/global-view'
     }
 };
 
-const GALLERY_DISPLAY_LIMIT = 5; // โชว์ 5 รูปใน Collage
+const GALLERY_DISPLAY_LIMIT = 5; 
 const getElement = (id) => document.getElementById(id);
+
+// Utility: ดึง ID จาก URL
+function getActivityIdFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return parseInt(params.get('id')); 
+}
+
+// Helper: ค้นหากิจกรรมจากชุดข้อมูลโครงการทั้งหมด
+function findActivityById(projectId, allProjectsData) {
+    if (!allProjectsData || !allProjectsData.Card) return null;
+    
+    for (const quarter of allProjectsData.Card) {
+        if (quarter.Card) {
+            const foundActivity = quarter.Card.find(card => card.id === projectId);
+            if (foundActivity) {
+                return foundActivity; 
+            }
+        }
+    }
+    return null; 
+}
 
 // โหลด Layout Header/Footer
 async function loadLayout() {
     try {
-        const globalRes = await fetch(CONFIG.API_ENDPOINTS.global);
-        if (!globalRes.ok) throw new Error('Failed to fetch global data');
+        // NEW: ดึง Global View พร้อมกัน
+        const [globalRes, globalViewRes] = await Promise.all([
+            fetch(CONFIG.API_ENDPOINTS.global),
+            fetch(CONFIG.API_ENDPOINTS.globalView)
+        ]);
+        
+        if (!globalRes.ok || !globalViewRes.ok) throw new Error('Failed to fetch global data');
+        
         const globalData = await globalRes.json();
+        const globalViewData = await globalViewRes.json(); 
+        
         renderHeader(globalData.data.Header);
-        renderFooter(globalData.data.Footer);
+        renderFooter(globalData.data.Footer, globalViewData.data);
     } catch (error) {
         console.error('Error loading layout:', error);
     }
 }
 
-// โหลดข้อมูลโปรเจค (Mock)
+// โหลดข้อมูลโปรเจคจริงและค้นหากิจกรรม
 async function loadActivityDetail() {
-    console.log("Running in MOCK mode. Using FAKE_PROJECT_DATA.");
+    const activityId = getActivityIdFromUrl();
+    const galleryContainer = getElement('gallery-container');
+    const contentContainer = getElement('content-container');
+    
+    if (!activityId) {
+        galleryContainer.innerHTML = '<p class="loading-placeholder">ไม่พบ ID กิจกรรม</p>';
+        contentContainer.innerHTML = '';
+        return;
+    }
+    
     try {
+        const projectsRes = await fetch(CONFIG.API_ENDPOINTS.projects);
+        if (!projectsRes.ok) throw new Error('Failed to fetch projects data');
         
-        const activity = FAKE_PROJECT_DATA;
-        const attributes = activity.attributes;
-        const images = attributes.cardImage.data; // Array รูปภาพ
+        const projectsData = await projectsRes.json();
+        const activity = findActivityById(activityId, projectsData.data);
+        
+        if (!activity) {
+            galleryContainer.innerHTML = `<p class="loading-placeholder">ไม่พบกิจกรรม ID: ${activityId}</p>`;
+            contentContainer.innerHTML = '';
+            return;
+        }
+
+        const images = activity.cardImage || []; 
+        
+        // **!!! EDITED: ดึง longText ก่อน สำหรับบทความเต็ม !!!**
+        const fullContent = activity.longText || activity.text; 
+        
+        const formattedDescription = fullContent || 'ไม่มีรายละเอียด';
         
         renderGallery(activity.id, images);
-        renderContent(attributes.Title, attributes.Description);
+        renderContent(activity.Heading, formattedDescription);
         
-
     } catch (error) {
         console.error('Error loading activity detail:', error);
-        getElement('gallery-container').innerHTML = '<p style="color: red; text-align: center; font-size: 1.6rem;">เกิดข้อผิดพลาดในการแสดงผล Mock Data</p>';
+        galleryContainer.innerHTML = '<p class="loading-placeholder" style="color: red;">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
+        contentContainer.innerHTML = '';
     }
 }
 
@@ -75,7 +101,7 @@ async function loadActivityDetail() {
 function renderGallery(activityId, galleryImages) {
     const container = document.getElementById('gallery-container');
     if (!galleryImages || galleryImages.length === 0) {
-        container.innerHTML = "<p>No images found.</p>";
+        container.innerHTML = "<p class='loading-placeholder'>No images found.</p>";
         return;
     }
 
@@ -86,9 +112,9 @@ function renderGallery(activityId, galleryImages) {
     const linkId = `gallery-${activityId}`;
 
     galleryImages.forEach((image, index) => {
-        const fullUrl = image.attributes.url;
-        const thumbUrl = image.attributes.formats.small?.url || fullUrl;
-        const altText = image.attributes.alternativeText || 'Activity Image';
+        const fullUrl = image.url;
+        const thumbUrl = image.url; 
+        const altText = image.alternativeText || 'Activity Image';
 
         if (index < (GALLERY_DISPLAY_LIMIT - 1)) {
             visibleHtml += `<a href="${fullUrl}" data-fancybox="${linkId}" class="grid-item"><img src="${thumbUrl}" alt="${altText}"></a>`;
@@ -110,12 +136,10 @@ function renderGallery(activityId, galleryImages) {
         <div style="display: none;">${hiddenHtml}</div>
     `;
 
-    // สั่ง Fancybox ให้ทำงาน
     Fancybox.bind(`[data-fancybox="${linkId}"]`, {});
 }
 
 // สร้างเนื้อหา
-// (ไม่ต้องแก้)
 function renderContent(title, description) {
     const container = document.getElementById('content-container');
     container.innerHTML = `
@@ -143,14 +167,59 @@ function renderHeader(headerData) {
     header.innerHTML = `<div class="header-container"><img src="${headerData.Logo.Logo.url}" alt="Logo" class="logo"><nav class="navbar">${navLinks}</nav></div>`;
 }
 
-function renderFooter(footerData) {
+// **!!! EDITED: ปรับปรุง renderFooter เพื่อแสดงยอดวิว !!!**
+// **!! NEW: ปรับปรุง renderFooter ให้อ่านค่าจาก data.totalViews โดยตรง !!**
+function renderFooter(footerData, globalViewData = null) {
     const footer = getElement("footer");
-    if (!footer) return;
-    const socialIcons = footerData.Icon.slice(1).map(icon => `<a href="${icon.href}" target="_blank"><img src="${icon.Logo.url}" alt="${icon.label}"></a>`).join("");
-    footer.innerHTML = `<div class="footer-container"><div class="footer-left"><img src="${footerData.Icon[0].Logo.url}" alt="Website Logo" class="footer-logo"><div class="footer-socials">${socialIcons}</div><p class="footer-text">${footerData.text}</p></div><div class="footer-right">${footerData.map?.map || ''}</div></div>`;
+    const socialIcons = footerData.Icon.slice(1).map(icon => `
+        <a href="${icon.href}" target="_blank">
+            <img src="${icon.Logo.url}" alt="${icon.label}">
+        </a>
+    `).join("");
+
+    // เปลี่ยนจาก .attributes.totalViews เป็น .totalViews
+    const totalViews = globalViewData?.totalViews ?? 'N/A'; 
+    
+    const viewCounterHTML = `
+        <div class="view-counter" style="
+            text-align: center; 
+            margin-top: 2rem; 
+            padding-top: 1rem; 
+            border-top: 1px solid #ccc;
+            font-size: 1.4rem; 
+            color: #555;
+            width: 100%;
+        ">
+            <i class="fas fa-eye"></i> จำนวนผู้เข้าชม: 
+            <span style="font-weight: 700; color: var(--brown);">${totalViews}</span>
+        </div>
+    `;
+
+    footer.innerHTML = `
+        <div class="footer-container">
+            <div class="footer-left">
+                <img src="${footerData.Icon[0].Logo.url}" alt="Website Logo" class="footer-logo">
+                <div class="footer-socials">${socialIcons}</div>
+                <p class="footer-text">${footerData.text}</p>
+            </div>
+            <div class="footer-right">
+                ${footerData.map?.map || ''}
+            </div>
+        </div>
+        ${viewCounterHTML}
+    `;
+    
+    if (footer) {
+        const style = document.createElement('style');
+        style.textContent = `
+            .view-counter i { margin-right: 0.5rem; color: #8A411B; }
+            .footer-container { margin-bottom: 2rem; }
+        `;
+        document.head.appendChild(style); 
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadLayout();         // 1. โหลด Header/Footer (จาก API จริง)
-    loadActivityDetail(); // 2. โหลด Gallery (จาก Mock Data)
+    loadLayout();         
+    loadActivityDetail(); 
 });

@@ -4,7 +4,10 @@ const CONFIG = {
     SLIDER_INTERVAL: 4000,
     API_ENDPOINTS: {
         global: 'https://healing-deer-4066e16ac3.strapiapp.com/api/global',
-        landing: 'https://healing-deer-4066e16ac3.strapiapp.com/api/landing-page'
+        landing: 'https://healing-deer-4066e16ac3.strapiapp.com/api/landing-page',
+        // --- NEW: API สำหรับติดตามและนับวิว ---
+        viewTracker: 'https://healing-deer-4066e16ac3.strapiapp.com/api/views-tracker/track',
+        globalView: 'https://healing-deer-4066e16ac3.strapiapp.com/api/global-view' 
     }
 };
 
@@ -22,31 +25,61 @@ const createElement = (tag, className, innerHTML) => {
 
 const getElement = (id) => document.getElementById(id);
 
+// Helper function to find blocks
+function findBlock(blocks, component) {
+    return blocks.find(block => block.__component === component);
+}
+
+// **!!! NEW: ฟังก์ชันสำหรับสั่งนับวิว !!!**
+async function trackPageView() {
+    try {
+        const response = await fetch(CONFIG.API_ENDPOINTS.viewTracker, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            console.warn(`View tracking failed with status: ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Error tracking page view:', error);
+    }
+}
+
 // API functions
 async function fetchData() {
     try {
-        const [globalRes, landingRes] = await Promise.all([
+        // NEW: ดึง Global View พร้อมกัน
+        const [globalRes, landingRes, globalViewRes] = await Promise.all([
             fetch(CONFIG.API_ENDPOINTS.global),
-            fetch(CONFIG.API_ENDPOINTS.landing)
+            fetch(CONFIG.API_ENDPOINTS.landing),
+            fetch(CONFIG.API_ENDPOINTS.globalView)
         ]);
 
-        if (!globalRes.ok || !landingRes.ok) {
-            throw new Error('Failed to fetch data');
+        if (!globalRes.ok || !landingRes.ok || !globalViewRes.ok) {
+            throw new Error('Failed to fetch primary data'); 
         }
 
         const globalData = await globalRes.json();
         const landingData = await landingRes.json();
+        const globalViewData = await globalViewRes.json();
 
-        initializeWebsite(globalData.data, landingData.data);
+        // ส่งยอดวิวรวมเข้าไปใน initializeWebsite
+        initializeWebsite(globalData.data, landingData.data, globalViewData.data);
+        
+        // **!!! NEW: สั่งนับวิวทันทีหลังจากโหลดข้อมูลเสร็จ !!!**
+        trackPageView(); 
+        
     } catch (error) {
         console.error('Error fetching data:', error);
-        // Show error message to user
         document.body.innerHTML = '<div style="text-align: center; padding: 5rem; font-size: 2rem; color: red;">Failed to load website data. Please try again later.</div>';
     }
 }
 
 // Initialize website
-function initializeWebsite(globalData, landingData) {
+function initializeWebsite(globalData, landingData, globalViewData) {
     const blocks = landingData.blocks;
     
     renderHeader(globalData.Header);
@@ -55,13 +88,9 @@ function initializeWebsite(globalData, landingData) {
     renderCards(findBlock(blocks, "blocks.card-grid"));
     renderYouTube(findBlock(blocks, "blocks.section-youtube"));
     renderCalendar(findBlock(blocks, "blocks.calendar"));
-    renderFooter(globalData.Footer);
+    renderFooter(globalData.Footer, globalViewData); 
 }
 
-// Helper function to find blocks
-function findBlock(blocks, component) {
-    return blocks.find(block => block.__component === component);
-}
 
 // Render functions
 function renderHeader(headerData) {
@@ -105,7 +134,6 @@ function renderHero(heroBlock) {
     const container = getElement("hero-slider");
     const images = heroBlock.HeroPicture;
 
-    // Add images
     images.forEach((img, index) => {
         const imgElement = createElement('img');
         imgElement.src = img.Image.url;
@@ -114,7 +142,6 @@ function renderHero(heroBlock) {
         container.appendChild(imgElement);
     });
 
-    // Create indicators
     const indicatorsContainer = container.querySelector('.indicators');
     images.forEach((_, index) => {
         const indicator = createElement('span', index === 0 ? 'indicator active' : 'indicator');
@@ -123,11 +150,9 @@ function renderHero(heroBlock) {
         indicatorsContainer.appendChild(indicator);
     });
 
-    // Add event listeners
     container.querySelector('.prev').addEventListener('click', () => changeSlide(-1));
     container.querySelector('.next').addEventListener('click', () => changeSlide(1));
 
-    // Start auto-slider
     startSlider(images.length);
 }
 
@@ -144,10 +169,9 @@ function renderCards(cardBlock) {
     const container = getElement("cards-container");
 
     container.innerHTML = cardBlock.Card.map(card => {
-        // เลือกรูปแรกจาก array ถ้ามี
         const imageUrl = card.cardImage?.[0]?.url 
             ? card.cardImage[0].url 
-            : 'placeholder.jpg'; // หรือใส่ path รูป placeholder ไว้ใช้กรณีไม่มีภาพ
+            : 'placeholder.jpg'; 
 
         return `
             <div class="card">
@@ -188,13 +212,33 @@ function renderCalendar(calendarBlock) {
     `;
 }
 
-function renderFooter(footerData) {
+// **!!! EDITED: ปรับปรุง renderFooter เพื่อแสดงยอดวิว !!!**
+// **!! NEW: ปรับปรุง renderFooter ให้อ่านค่าจาก data.totalViews โดยตรง !!**
+function renderFooter(footerData, globalViewData = null) {
     const footer = getElement("footer");
     const socialIcons = footerData.Icon.slice(1).map(icon => `
         <a href="${icon.href}" target="_blank">
             <img src="${icon.Logo.url}" alt="${icon.label}">
         </a>
     `).join("");
+
+    // เปลี่ยนจาก .attributes.totalViews เป็น .totalViews
+    const totalViews = globalViewData?.totalViews ?? 'N/A'; 
+    
+    const viewCounterHTML = `
+        <div class="view-counter" style="
+            text-align: center; 
+            margin-top: 2rem; 
+            padding-top: 1rem; 
+            border-top: 1px solid #ccc;
+            font-size: 1.4rem; 
+            color: #555;
+            width: 100%;
+        ">
+            <i class="fas fa-eye"></i> จำนวนผู้เข้าชม: 
+            <span style="font-weight: 700; color: var(--brown);">${totalViews}</span>
+        </div>
+    `;
 
     footer.innerHTML = `
         <div class="footer-container">
@@ -207,7 +251,17 @@ function renderFooter(footerData) {
                 ${footerData.map?.map || ''}
             </div>
         </div>
+        ${viewCounterHTML}
     `;
+    
+    if (footer) {
+        const style = document.createElement('style');
+        style.textContent = `
+            .view-counter i { margin-right: 0.5rem; color: #8A411B; }
+            .footer-container { margin-bottom: 2rem; }
+        `;
+        document.head.appendChild(style); 
+    }
 }
 
 // Slider functions
@@ -257,7 +311,7 @@ function resetSliderInterval() {
 // Card scrolling
 function scrollCards(direction) {
     const container = getElement("cards-container");
-    const cardWidth = container.querySelector(".card").offsetWidth + 20; // card width + gap
+    const cardWidth = container.querySelector(".card").offsetWidth + 20; 
     
     container.scrollBy({
         left: direction * cardWidth * 2,

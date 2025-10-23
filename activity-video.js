@@ -3,7 +3,9 @@ const CONFIG = {
     STRAPI_URL: "https://healing-deer-4066e16ac3.strapiapp.com",
     API_ENDPOINTS: {
         global: 'https://healing-deer-4066e16ac3.strapiapp.com/api/global',
-        activityVideo: 'https://healing-deer-4066e16ac3.strapiapp.com/api/activity-vdo'
+        activityVideo: 'https://healing-deer-4066e16ac3.strapiapp.com/api/activity-vdo',
+        // --- NEW: API สำหรับดึงยอดรวมวิว ---
+        globalView: 'https://healing-deer-4066e16ac3.strapiapp.com/api/global-view'
     },
     VIDEOS_PER_PAGE: 6
 };
@@ -38,20 +40,24 @@ async function fetchData() {
     try {
         showLoading();
         
-        const [globalRes, activityRes] = await Promise.all([
+        // NEW: ดึง Global View พร้อมกัน
+        const [globalRes, activityRes, globalViewRes] = await Promise.all([
             fetch(CONFIG.API_ENDPOINTS.global),
-            fetch(CONFIG.API_ENDPOINTS.activityVideo)
+            fetch(CONFIG.API_ENDPOINTS.activityVideo),
+            fetch(CONFIG.API_ENDPOINTS.globalView)
         ]);
 
-        if (!globalRes.ok || !activityRes.ok) {
+        if (!globalRes.ok || !activityRes.ok || !globalViewRes.ok) {
             throw new Error('Failed to fetch data');
         }
 
         const globalData = await globalRes.json();
         const activityData = await activityRes.json();
+        const globalViewData = await globalViewRes.json();
 
         hideLoading();
-        initializeWebsite(globalData.data, activityData.data);
+        // NEW: ส่ง globalViewData เข้าไปใน initializeWebsite
+        initializeWebsite(globalData.data, activityData.data, globalViewData.data);
     } catch (error) {
         console.error('Error fetching data:', error);
         hideLoading();
@@ -77,11 +83,10 @@ function showError(message) {
 }
 
 // Initialize website
-function initializeWebsite(globalData, activityData) {
+function initializeWebsite(globalData, activityData, globalViewData) {
     renderHeader(globalData.Header);
-    renderFooter(globalData.Footer);
+    renderFooter(globalData.Footer, globalViewData); // NEW: ส่ง globalViewData
     
-    // Extract videos from the YouTube blocks
     const youtubeBlock = activityData.YoutubeBlocks.find(block => 
         block.__component === "blocks.section-youtube"
     );
@@ -131,13 +136,33 @@ function renderHeader(headerData) {
     `;
 }
 
-function renderFooter(footerData) {
+// **!!! EDITED: ปรับปรุง renderFooter เพื่อแสดงยอดวิว !!!**
+// **!! NEW: ปรับปรุง renderFooter ให้อ่านค่าจาก data.totalViews โดยตรง !!**
+function renderFooter(footerData, globalViewData = null) {
     const footer = getElement("footer");
     const socialIcons = footerData.Icon.slice(1).map(icon => `
         <a href="${icon.href}" target="_blank">
             <img src="${icon.Logo.url}" alt="${icon.label}">
         </a>
     `).join("");
+
+    // เปลี่ยนจาก .attributes.totalViews เป็น .totalViews
+    const totalViews = globalViewData?.totalViews ?? 'N/A'; 
+    
+    const viewCounterHTML = `
+        <div class="view-counter" style="
+            text-align: center; 
+            margin-top: 2rem; 
+            padding-top: 1rem; 
+            border-top: 1px solid #ccc;
+            font-size: 1.4rem; 
+            color: #555;
+            width: 100%;
+        ">
+            <i class="fas fa-eye"></i> จำนวนผู้เข้าชม: 
+            <span style="font-weight: 700; color: var(--brown);">${totalViews}</span>
+        </div>
+    `;
 
     footer.innerHTML = `
         <div class="footer-container">
@@ -150,7 +175,17 @@ function renderFooter(footerData) {
                 ${footerData.map?.map || ''}
             </div>
         </div>
+        ${viewCounterHTML}
     `;
+    
+    if (footer) {
+        const style = document.createElement('style');
+        style.textContent = `
+            .view-counter i { margin-right: 0.5rem; color: #8A411B; }
+            .footer-container { margin-bottom: 2rem; }
+        `;
+        document.head.appendChild(style); 
+    }
 }
 
 // Video rendering functions
@@ -219,7 +254,6 @@ function loadMoreVideos() {
     loadMoreBtn.textContent = 'กำลังโหลด...';
     loadMoreBtn.disabled = true;
     
-    // Simulate loading delay for better UX
     setTimeout(() => {
         const nextVideos = allVideos.slice(displayedVideos, displayedVideos + CONFIG.VIDEOS_PER_PAGE);
         
@@ -229,7 +263,6 @@ function loadMoreVideos() {
         
         displayedVideos += nextVideos.length;
         
-        // Update button state
         if (displayedVideos >= allVideos.length) {
             loadMoreBtn.style.display = 'none';
         } else {
@@ -269,7 +302,6 @@ function openVideoModal(video) {
     modalTitle.textContent = video.Heading;
     modalVideoContainer.innerHTML = video.clip[0].children[0].text;
     
-    // Make iframe responsive
     const iframe = modalVideoContainer.querySelector('iframe');
     if (iframe) {
         iframe.style.width = '100%';
@@ -288,7 +320,6 @@ function closeVideoModal() {
     modal.style.display = 'none';
     document.body.style.overflow = 'auto';
     
-    // Stop video playback
     modalVideoContainer.innerHTML = '';
 }
 

@@ -3,7 +3,9 @@ const CONFIG = {
     STRAPI_URL: "https://healing-deer-4066e16ac3.strapiapp.com",
     API_ENDPOINTS: {
         global: 'https://healing-deer-4066e16ac3.strapiapp.com/api/global',
-        budget: 'https://healing-deer-4066e16ac3.strapiapp.com/api/download-page' // API endpoint สำหรับข้อมูลงบประมาณ
+        budget: 'https://healing-deer-4066e16ac3.strapiapp.com/api/download-page', 
+        // --- NEW: API สำหรับดึงยอดรวมวิว ---
+        globalView: 'https://healing-deer-4066e16ac3.strapiapp.com/api/global-view'
     }
 };
 
@@ -74,11 +76,9 @@ const getFileTypeColor = (fileType) => {
     return colors[fileType.toLowerCase()] || colors['default'];
 };
 
-// Helper function to get actual file size from API or extract file extension
 const getFileInfoFromUrl = async (fileData) => {
     if (!fileData) return { type: 'pdf', size: 0 };
     
-    // ถ้ามี size ใน API data ให้ใช้ค่าจริง
     if (fileData.size) {
         const urlParts = fileData.url.split('.');
         const extension = urlParts[urlParts.length - 1].toLowerCase();
@@ -88,7 +88,6 @@ const getFileInfoFromUrl = async (fileData) => {
         };
     }
     
-    // ถ้าไม่มี size ให้ลองดึงจาก HEAD request
     try {
         const response = await fetch(fileData.url, { method: 'HEAD' });
         const contentLength = response.headers.get('content-length');
@@ -100,7 +99,6 @@ const getFileInfoFromUrl = async (fileData) => {
             size: contentLength ? parseInt(contentLength) : 0
         };
     } catch (error) {
-        // ถ้าดึงไม่ได้ให้ใช้ค่า 0
         const urlParts = fileData.url.split('.');
         const extension = urlParts[urlParts.length - 1].toLowerCase();
         return {
@@ -114,18 +112,24 @@ const getFileInfoFromUrl = async (fileData) => {
 // 1. ฟังก์ชันสำหรับโหลด Layout (Header/Footer) โดยเฉพาะ
 async function loadLayout() {
     try {
-        const globalRes = await fetch(CONFIG.API_ENDPOINTS.global);
-        if (!globalRes.ok) throw new Error('Failed to fetch global data');
+        // NEW: ดึง Global View พร้อมกัน
+        const [globalRes, globalViewRes] = await Promise.all([
+            fetch(CONFIG.API_ENDPOINTS.global),
+            fetch(CONFIG.API_ENDPOINTS.globalView)
+        ]);
+        
+        if (!globalRes.ok || !globalViewRes.ok) throw new Error('Failed to fetch global data');
         
         const globalData = await globalRes.json();
+        const globalViewData = await globalViewRes.json();
         
         // เรนเดอร์ Header และ Footer ทันที!
+        // NEW: ส่ง globalViewData ไปยัง renderFooter
         renderHeader(globalData.data.Header);
-        renderFooter(globalData.data.Footer);
+        renderFooter(globalData.data.Footer, globalViewData.data);
         
     } catch (error) {
         console.error('Error loading layout:', error);
-        // ถ้า Header/Footer ล่ม ก็อาจจะแสดงผล error บางอย่าง
     }
 }
 
@@ -137,7 +141,6 @@ async function loadBudgetContent() {
         
         const budgetDataResponse = await budgetRes.json();
         
-        // แปลงข้อมูลและเรนเดอร์เนื้อหา (ซึ่งจะใช้เวลา ก็ไม่เป็นไร)
         budgetData = await transformBudgetData(budgetDataResponse.data);
         renderBudgetContent();
         
@@ -156,14 +159,11 @@ async function transformBudgetData(apiData) {
     const transformedData = [];
     
     for (const [blockIndex, block] of apiData.LoadBlocks.entries()) {
-        // สร้าง title จากการดูข้อมูลใน block หรือใช้ title เริ่มต้น
         let sectionTitle = 'เอกสารและแบบฟอร์ม';
         
-        // ลองดู pattern จาก card headings เพื่อสร้าง section title
         if (block.Card && block.Card.length > 0) {
             const firstCardHeading = block.Card[0].Heading;
             
-            // จัดกลุ่มตาม pattern ของชื่อ
             if (firstCardHeading.includes('ค่าบริการทางวิชาการ')) {
                 sectionTitle = 'การให้บริการทางวิชาการ';
             } else if (firstCardHeading.includes('การจัดประชุม') || firstCardHeading.includes('หลักเกณฑ์ในการจัดประชุม')) {
@@ -179,14 +179,12 @@ async function transformBudgetData(apiData) {
         
         const files = [];
         
-        // ประมวลผลไฟล์แต่ละไฟล์
         for (const [cardIndex, card] of block.Card.entries()) {
             let fileUrl = '/files/default.pdf';
             let fileInfo = { type: 'pdf', size: 0 };
             
             if (card.cardImage && card.cardImage.length > 0) {
                 fileUrl = card.cardImage[0].url;
-                // ใช้ฟังก์ชันใหม่เพื่อดึงขนาดไฟล์จริง
                 fileInfo = await getFileInfoFromUrl(card.cardImage[0]);
             }
             
@@ -301,19 +299,38 @@ function renderBudgetContent() {
     
     container.innerHTML = sectionsHTML;
     
-    // Update navigation buttons state for each section
     budgetData.forEach(section => {
         updateNavButtons(section.id);
     });
 }
 
-function renderFooter(footerData) {
+// **!!! EDITED: ปรับปรุง renderFooter เพื่อแสดงยอดวิว !!!**
+// **!! NEW: ปรับปรุง renderFooter ให้อ่านค่าจาก data.totalViews โดยตรง !!**
+function renderFooter(footerData, globalViewData = null) {
     const footer = getElement("footer");
     const socialIcons = footerData.Icon.slice(1).map(icon => `
         <a href="${icon.href}" target="_blank">
             <img src="${icon.Logo.url}" alt="${icon.label}">
         </a>
     `).join("");
+
+    // เปลี่ยนจาก .attributes.totalViews เป็น .totalViews
+    const totalViews = globalViewData?.totalViews ?? 'N/A'; 
+    
+    const viewCounterHTML = `
+        <div class="view-counter" style="
+            text-align: center; 
+            margin-top: 2rem; 
+            padding-top: 1rem; 
+            border-top: 1px solid #ccc;
+            font-size: 1.4rem; 
+            color: #555;
+            width: 100%;
+        ">
+            <i class="fas fa-eye"></i> จำนวนผู้เข้าชม: 
+            <span style="font-weight: 700; color: var(--brown);">${totalViews}</span>
+        </div>
+    `;
 
     footer.innerHTML = `
         <div class="footer-container">
@@ -326,37 +343,43 @@ function renderFooter(footerData) {
                 ${footerData.map?.map || ''}
             </div>
         </div>
+        ${viewCounterHTML}
     `;
+    
+    if (footer) {
+        const style = document.createElement('style');
+        style.textContent = `
+            .view-counter i { margin-right: 0.5rem; color: #8A411B; }
+            .footer-container { margin-bottom: 2rem; }
+        `;
+        document.head.appendChild(style); 
+    }
 }
 
 // File operations
 function downloadFile(url, filename) {
-    // สร้าง link element สำหรับดาวน์โหลด
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;
     link.target = '_blank';
     
-    // Add click event
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
-    // Show download notification
     showNotification(`กำลังดาวน์โหลด: ${filename}`);
 }
 
 // Scroll functions
 function scrollFiles(sectionId, direction) {
     const wrapper = getElement(`files-wrapper-${sectionId}`);
-    const cardWidth = wrapper.querySelector('.file-card').offsetWidth + 20; // card width + gap
+    const cardWidth = wrapper.querySelector('.file-card').offsetWidth + 20; 
     
     wrapper.scrollBy({
         left: direction * cardWidth * 2,
         behavior: 'smooth'
     });
     
-    // Update navigation buttons after scroll
     setTimeout(() => updateNavButtons(sectionId), 300);
 }
 
@@ -391,13 +414,11 @@ function showError(message) {
 }
 
 function showNotification(message) {
-    // สร้าง notification element
     const notification = createElement('div', 'notification', `
         <i class="fas fa-download"></i>
         <span>${message}</span>
     `);
     
-    // Add styles
     notification.style.cssText = `
         position: fixed;
         top: 120px;
@@ -413,7 +434,6 @@ function showNotification(message) {
     
     document.body.appendChild(notification);
     
-    // Remove after 3 seconds
     setTimeout(() => {
         notification.style.animation = 'slideOut 0.3s ease';
         setTimeout(() => {
@@ -424,7 +444,6 @@ function showNotification(message) {
     }, 3000);
 }
 
-// Add CSS animations
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
@@ -448,8 +467,7 @@ style.textContent = `
 document.head.appendChild(style);
 
 // Initialize when DOM is loaded
-// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    loadLayout();         // <-- 1. สั่งโหลด Layout ทันที
-    loadBudgetContent();  // <-- 2. สั่งโหลดเนื้อหา (มันจะโหลดขนานกันไป แต่ไม่บล็อก Layout)
+    loadLayout();         
+    loadBudgetContent();  
 });
