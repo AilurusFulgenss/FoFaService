@@ -40,9 +40,11 @@ html {
 
 .logo {
     margin-top: 1cm;
-    height: 250px;
-    width: 150px;
+    height: 200px;
+    width: 120px;
     object-fit: contain;
+    position: relative;
+    padding-bottom: 30px;
 }
 
 .navbar {
